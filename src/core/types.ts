@@ -195,6 +195,12 @@ export interface ExtremeEventAlert {
   confidence: number; // 0-100%
   evidenceFeatures: string[];
   meteorologicalBulletin: string;
+  status?: 'MONITOR' | 'DEVELOPING' | 'DETECTED' | 'CONFIRMED' | 'ENDED';
+  durationPeriods?: number;
+  leadTimeHours?: number;
+  modelSpread?: number;
+  confirmedByObservation?: boolean;
+  observedPeakValue?: number;
 }
 
 /** Verification Metrics for Continuous Variables */

@@ -185,7 +185,12 @@ export const App: React.FC = () => {
               <ExtremeEventMonitor
                 alerts={pipelineData.alerts}
                 station={selectedStation}
+                setStation={setSelectedStation}
+                timeSeriesTrajectory={pipelineData.timeSeriesTrajectory}
+                verification={pipelineData.verification}
                 isDemonstrationData={pipelineData.isDemonstrationData}
+                onNavigate={(tab) => setActiveTab(tab)}
+                setSelectedVariable={setSelectedVariable}
               />
             )}
 
