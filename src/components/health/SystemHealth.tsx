@@ -1,20 +1,13 @@
 import React from 'react';
 import { 
-  Radio, 
-  Activity, 
-  CheckCircle2, 
-  AlertTriangle, 
-  Clock, 
   Server, 
-  Database, 
-  Cpu, 
-  ShieldCheck,
-  RefreshCw
+  Activity, 
+  ShieldCheck, 
+  CheckCircle2, 
+  Clock, 
+  RefreshCw 
 } from 'lucide-react';
 import { ProviderHealthStatus } from '../../core/types';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
-import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
 
 interface SystemHealthProps {
   providerHealth: ProviderHealthStatus[];
@@ -30,179 +23,144 @@ export const SystemHealth: React.FC<SystemHealthProps> = ({
   isLoading,
 }) => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-12 py-4">
       
-      {/* Top Banner: Engineering Monitoring Telemetry */}
-      <div className="rounded-xl border border-slate-800 bg-[#0E1422] p-5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center space-x-2">
-              <Radio className="w-5 h-5 text-cyan-400" />
-              <h2 className="text-lg font-bold text-white">System Ingestion & Pipeline Health Telemetry</h2>
-              <Badge variant="scientific" className="text-xs">
-                Real-Time Diagnostics
-              </Badge>
-            </div>
-            <p className="text-xs text-slate-400 mt-1 font-mono">
-              Engineering monitoring of forecast providers, ingestion latency, data freshness, and Quality Control validation pass rates.
-            </p>
+      {/* Engineering Headline */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 hairline-b pb-8">
+        <div className="space-y-2">
+          <div className="text-xs font-mono text-slate-400 uppercase tracking-widest">
+            ENGINEERING DIAGNOSTICS
           </div>
-
-          <div className="flex items-center space-x-3">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onRefresh}
-              disabled={isLoading}
-              className="text-xs font-mono border-slate-700 hover:bg-slate-800"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isLoading ? 'animate-spin text-cyan-400' : ''}`} />
-              <span>{isLoading ? 'Checking Telemetry...' : 'Poll Providers'}</span>
-            </Button>
-          </div>
+          <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-white font-sans">
+            System Ingestion & Telemetry
+          </h2>
+          <p className="text-sm text-slate-400 font-sans max-w-2xl leading-relaxed">
+            Real-time pipeline monitoring tracking latency, data completeness, and automated Quality Control (QC) validation pass rates.
+          </p>
         </div>
+
+        <button
+          onClick={onRefresh}
+          disabled={isLoading}
+          className="inline-flex items-center space-x-2 text-xs font-mono text-white border border-white/20 px-3.5 py-2 rounded hover:bg-white/10 transition-colors"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+          <span>{isLoading ? 'Polling Sources...' : 'Poll Providers'}</span>
+        </button>
       </div>
 
-      {/* Provider Health Matrix */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Provider Matrix */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {providerHealth.map((provider) => {
           const isLive = provider.status === 'ONLINE';
-          const isDemo = provider.status === 'DEMO_DATA';
 
           return (
-            <Card key={provider.providerId} className="border-slate-800 bg-[#0E1422]">
-              <CardHeader className="pb-3 border-b border-slate-800/80">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Server className="w-4 h-4 text-cyan-400" />
-                    <CardTitle className="text-sm font-bold text-white">
-                      {provider.providerId}
-                    </CardTitle>
-                  </div>
-                  <Badge 
-                    variant={isLive ? 'success' : isDemo ? 'warning' : 'danger'}
-                    className="text-[10px] font-mono"
-                  >
-                    {isLive ? 'ONLINE LIVE' : isDemo ? 'BENCHMARK' : 'DISCONNECTED'}
-                  </Badge>
-                </div>
-                <div className="text-[11px] font-mono text-slate-400 truncate mt-1">
-                  {provider.name}
-                </div>
-              </CardHeader>
-              <CardContent className="pt-3 text-xs font-mono space-y-2">
-                <div className="flex items-center justify-between text-slate-400">
-                  <span>Ingestion Latency:</span>
-                  <span className="text-slate-200 font-semibold">{provider.latencyMs} ms</span>
-                </div>
+            <div key={provider.providerId} className="p-5 rounded border border-white/10 bg-[#0D0F15] space-y-4 font-mono text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-bold text-white">{provider.providerId}</span>
+                <span className={`text-[10px] px-2 py-0.5 rounded border ${
+                  isLive 
+                    ? 'border-emerald-500/40 text-emerald-400 bg-emerald-500/10' 
+                    : 'border-white/10 text-slate-400'
+                }`}>
+                  {isLive ? 'ONLINE' : 'BENCHMARK'}
+                </span>
+              </div>
 
-                <div className="flex items-center justify-between text-slate-400">
+              <div className="text-[11px] text-slate-400 truncate">
+                {provider.name}
+              </div>
+
+              <div className="hairline-t pt-3 space-y-1.5 text-slate-400">
+                <div className="flex justify-between">
+                  <span>Latency:</span>
+                  <span className="text-slate-200">{provider.latencyMs} ms</span>
+                </div>
+                <div className="flex justify-between">
                   <span>QC Pass Rate:</span>
                   <span className="text-emerald-400 font-bold">{provider.qcPassRate}%</span>
                 </div>
-
-                <div className="flex items-center justify-between text-slate-400">
-                  <span>Missing Values:</span>
-                  <span className="text-slate-200 font-semibold">{provider.missingDataPct.toFixed(1)}%</span>
+                <div className="flex justify-between">
+                  <span>Records:</span>
+                  <span className="text-slate-200">{provider.totalRecordsIngested}</span>
                 </div>
-
-                <div className="flex items-center justify-between text-slate-400">
-                  <span>Records Parsed:</span>
-                  <span className="text-cyan-300 font-bold">{provider.totalRecordsIngested}</span>
+                <div className="flex justify-between">
+                  <span>Cycle:</span>
+                  <span className="text-slate-200">{provider.activeCycle}</span>
                 </div>
-
-                <div className="flex items-center justify-between text-slate-400 border-t border-slate-800/60 pt-2">
-                  <span>Cycle Synced:</span>
-                  <span className="text-slate-300 text-[11px]">{provider.activeCycle}</span>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           );
         })}
       </div>
 
-      {/* Quality Control & Pipeline Stages Breakdown */}
+      {/* Quality Control Stages & Audit Log */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        {/* Quality Control Telemetry */}
-        <Card className="border-slate-800 bg-[#0E1422]">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>Automated Quality Control (QC) Pipeline</span>
-            </CardTitle>
-            <CardDescription>
-              Four-stage automated validation ensuring physical consistency and preventing corrupted data ingestion
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 font-mono text-xs">
-            <div className="p-3 rounded bg-slate-900 border border-slate-800 space-y-1">
-              <div className="flex items-center justify-between text-slate-200 font-semibold">
-                <span>1. Physical Boundary Verification</span>
-                <Badge variant="success" className="text-[10px]">100% CLEAN</Badge>
+        <div className="p-6 rounded border border-white/10 bg-[#0D0F15] space-y-4">
+          <div>
+            <h3 className="text-base font-semibold text-white font-sans">
+              Quality Control Pipeline Stages
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Automated physical range limits and elevation lapse-rate corrections
+            </p>
+          </div>
+
+          <div className="space-y-3 font-mono text-xs text-slate-300">
+            <div className="p-3 rounded bg-white/5 space-y-1">
+              <div className="flex justify-between font-semibold text-white">
+                <span>1. Boundary Sanity Verification</span>
+                <span className="text-emerald-400">100% PASS</span>
               </div>
               <p className="text-[11px] text-slate-400 font-sans">
-                Clamps temperature [-75°C, 58°C], wind [0, 110 m/s], RH [0, 100%], pressure [870, 1085 hPa].
+                Clamps physical extremes: Temperature [-75°C, 58°C], Wind [0, 110 m/s], RH [0, 100%].
               </p>
             </div>
 
-            <div className="p-3 rounded bg-slate-900 border border-slate-800 space-y-1">
-              <div className="flex items-center justify-between text-slate-200 font-semibold">
-                <span>2. Temporal Spike Rate Check</span>
-                <Badge variant="success" className="text-[10px]">ACTIVE</Badge>
+            <div className="p-3 rounded bg-white/5 space-y-1">
+              <div className="flex justify-between font-semibold text-white">
+                <span>2. Temporal Rate-of-Change Check</span>
+                <span className="text-emerald-400">ACTIVE</span>
               </div>
               <p className="text-[11px] text-slate-400 font-sans">
-                Flags physically impossible hourly rate of change (e.g. &gt;12°C/hr without front passage).
+                Flags unnatural unphysical hourly step deltas (&gt;12°C/hr without frontal passage).
               </p>
             </div>
 
-            <div className="p-3 rounded bg-slate-900 border border-slate-800 space-y-1">
-              <div className="flex items-center justify-between text-slate-200 font-semibold">
-                <span>3. Elevation Lapse-Rate Adjustment</span>
-                <Badge variant="success" className="text-[10px]">ACTIVE</Badge>
+            <div className="p-3 rounded bg-white/5 space-y-1">
+              <div className="flex justify-between font-semibold text-white">
+                <span>3. Tropospheric Elevation Lapse Adjustment</span>
+                <span className="text-emerald-400">ACTIVE</span>
               </div>
               <p className="text-[11px] text-slate-400 font-sans">
-                Applies standard tropospheric 6.5°C / 1000m lapse rate and hydrostatic pressure correction.
+                Harmonizes station MSL elevation via standard 6.5°C / 1000m lapse rate.
               </p>
             </div>
+          </div>
+        </div>
 
-            <div className="p-3 rounded bg-slate-900 border border-slate-800 space-y-1">
-              <div className="flex items-center justify-between text-slate-200 font-semibold">
-                <span>4. Temporal & Spatial Common Grid Alignment</span>
-                <Badge variant="success" className="text-[10px]">HARMONIZED</Badge>
-              </div>
-              <p className="text-[11px] text-slate-400 font-sans">
-                Synchronizes multi-model cycles onto uniform target verification lead intervals (+0h to +168h).
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="p-6 rounded border border-white/10 bg-[#0D0F15] space-y-4">
+          <div>
+            <h3 className="text-base font-semibold text-white font-sans">
+              Operational Ingestion Audit Log
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Chronological log of multi-model data transformations and Bayesian calculations
+            </p>
+          </div>
 
-        {/* Pipeline Telemetry Log */}
-        <Card className="border-slate-800 bg-[#0E1422]">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Activity className="w-4 h-4 text-cyan-400" />
-              <span>Real-Time Ingestion & Processing Audit Log</span>
-            </CardTitle>
-            <CardDescription>
-              Chronological log of data transformations, Bayesian inferences, and alert scans
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 font-mono text-[11px] space-y-2 h-[270px] overflow-y-auto text-slate-300">
-              <div className="text-slate-400">[00:00:00Z] Pipeline initialized. Provider abstraction loaded.</div>
-              <div className="text-cyan-400">[00:00:01Z] QC engine active: Checking physical range boundaries...</div>
-              <div className="text-emerald-400">[00:00:02Z] Ingestion complete: ECMWF, GFS, ICON, GraphCast records validated.</div>
-              <div className="text-slate-300">[00:00:03Z] Common grid temporal alignment: Resampled to [0, 6, 12, 24, 48, 72, 120, 168] hours.</div>
-              <div className="text-amber-400">[00:00:04Z] Weather Context Engine: Dynamic regime classification executed.</div>
-              <div className="text-cyan-300">[00:00:05Z] Adaptive Weighting Engine: Bayesian softmax loss evaluated (T=1.2).</div>
-              <div className="text-purple-400">[00:00:06Z] Uncertainty Engine: Epistemic spread and aleatoric bounds computed.</div>
-              <div className="text-emerald-300">[00:00:07Z] Verification Engine: Time-aware out-of-sample block benchmark synchronized.</div>
-              <div className="text-slate-400">[00:00:08Z] System status nominal. Ready for operational queries.</div>
-            </div>
-          </CardContent>
-        </Card>
+          <div className="p-4 rounded bg-black/60 border border-white/5 font-mono text-[11px] space-y-2 h-[260px] overflow-y-auto text-slate-400">
+            <div>[00:00:00Z] Pipeline initialized. Ingestion providers verified.</div>
+            <div>[00:00:01Z] Quality control active: boundary filters nominal.</div>
+            <div>[00:00:02Z] Temporal grid resampled onto uniform lead times: [0, 6, 12, 24, 48, 72, 120, 168]h.</div>
+            <div>[00:00:03Z] Context Engine: Weather regime evaluated with thermodynamic proxies.</div>
+            <div>[00:00:04Z] Adaptive Weighting: Bayesian softmax optimization converged (T=1.2).</div>
+            <div>[00:00:05Z] Uncertainty Engine: Epistemic disagreement and aleatoric bounds computed.</div>
+            <div>[00:00:06Z] Out-of-sample chronological verification block synchronized.</div>
+            <div className="text-white">[00:00:07Z] Telemetry nominal. Ready for queries.</div>
+          </div>
+        </div>
 
       </div>
 

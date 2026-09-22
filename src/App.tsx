@@ -23,12 +23,7 @@ import {
   PipelineExecutionResult 
 } from './core/services/ForecastingPipeline';
 import { 
-  Loader2, 
-  AlertCircle, 
-  CloudSun, 
-  ShieldCheck, 
-  Github, 
-  BookOpen 
+  AlertCircle 
 } from 'lucide-react';
 
 export const App: React.FC = () => {
@@ -37,7 +32,7 @@ export const App: React.FC = () => {
   const [selectedStation, setSelectedStation] = useState<StationLocation>(GLOBAL_STATIONS[0]); // New Delhi
   const [selectedVariable, setSelectedVariable] = useState<WeatherVariable>('temperature_2m');
   const [leadTimeHours, setLeadTimeHours] = useState<number>(24);
-  const [useLiveData, setUseLiveData] = useState<boolean>(false); // Defaults to peer-grade demonstration benchmark
+  const [useLiveData, setUseLiveData] = useState<boolean>(false);
   
   // Pipeline Results & Telemetry
   const [pipelineData, setPipelineData] = useState<PipelineExecutionResult | null>(null);
@@ -83,9 +78,9 @@ export const App: React.FC = () => {
   }, [selectedStation, selectedVariable, leadTimeHours, useLiveData]);
 
   return (
-    <div className="min-h-screen bg-[#0B0F17] text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#08090C] text-[#F4F4F6] flex flex-col font-sans selection:bg-white/20 selection:text-white">
       
-      {/* Top Professional Navigation */}
+      {/* Minimal Top Navigation */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -97,7 +92,7 @@ export const App: React.FC = () => {
         onOpenMethodology={() => setIsMethodologyOpen(true)}
       />
 
-      {/* Hero Section (Presented on Overview tab or as editorial intro) */}
+      {/* Full-Viewport Editorial Hero (Shown on Overview tab) */}
       {activeTab === 'overview' && (
         <Hero
           onNavigate={(tab) => setActiveTab(tab)}
@@ -105,27 +100,27 @@ export const App: React.FC = () => {
         />
       )}
 
-      {/* Main Scientific Application Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Main Product Interface Body */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
         
         {isLoading && !pipelineData ? (
-          <div className="flex flex-col items-center justify-center py-24 space-y-4">
-            <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+          <div className="flex flex-col items-center justify-center py-32 space-y-4">
+            <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white animate-spin" />
             <div className="text-center font-mono">
-              <p className="text-sm font-bold text-slate-200">Executing Meteorological Blending Pipeline</p>
-              <p className="text-xs text-slate-400 mt-1">
-                Aligning NWP & AI grids • Evaluating Weather Regimes • Calculating Bayesian Weights...
+              <p className="text-xs uppercase tracking-widest text-slate-400">EXECUTING FORECAST PIPELINE</p>
+              <p className="text-[11px] text-slate-500 mt-1">
+                Ingesting NWP & AI runs • Classifying Weather Regimes • Optimizing Bayesian Weights
               </p>
             </div>
           </div>
         ) : error ? (
-          <div className="p-6 rounded-xl bg-rose-950/40 border border-rose-500/50 text-rose-200 space-y-3 font-mono">
+          <div className="p-6 rounded border border-rose-500/30 bg-[#0E1015] text-rose-200 space-y-2 font-mono text-xs">
             <div className="flex items-center space-x-2">
-              <AlertCircle className="w-5 h-5 text-rose-400" />
+              <AlertCircle className="w-4 h-4 text-rose-400" />
               <span className="font-bold">Pipeline Error: {error}</span>
             </div>
-            <p className="text-xs text-rose-300">
-              Please check connection settings or switch to the Demonstration Dataset.
+            <p className="text-slate-400">
+              Please check connection settings or toggle back to the Benchmark Dataset.
             </p>
           </div>
         ) : pipelineData ? (
@@ -197,13 +192,12 @@ export const App: React.FC = () => {
               />
             )}
 
-            {/* SECTION G: SYSTEM & DATA HEALTH */}
+            {/* SECTION G: SYSTEM HEALTH */}
             {activeTab === 'health' && (
               <SystemHealth
                 providerHealth={pipelineData.providerHealth}
                 isDemonstrationData={pipelineData.isDemonstrationData}
                 onRefresh={() => {
-                  // Force pipeline re-run
                   setLeadTimeHours(prev => prev);
                 }}
                 isLoading={isLoading}
@@ -214,24 +208,28 @@ export const App: React.FC = () => {
 
       </main>
 
-      {/* Scientific Footer */}
-      <footer className="border-t border-slate-800 bg-[#0E1422] py-8 text-xs font-mono text-slate-400">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center space-x-2">
-            <CloudSun className="w-4 h-4 text-cyan-400" />
-            <span className="font-bold text-slate-200">HARMAUSAM</span>
-            <span className="text-slate-600">|</span>
-            <span>Explainable Context-Aware Hybrid AI–NWP Weather Forecast Blending</span>
+      {/* Minimalist Scientific Footer */}
+      <footer className="hairline-t bg-[#08090C] py-10 text-xs font-mono text-slate-500">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col sm:flex-row items-center sm:space-x-4">
+            <span className="font-bold tracking-[0.16em] text-white">HARMAUSAM</span>
+            <span className="hidden sm:inline text-slate-700">|</span>
+            <span className="text-slate-400">Context-Aware Hybrid AI–NWP Weather Forecast Blending</span>
           </div>
 
-          <div className="flex items-center space-x-6 text-[11px]">
-            <span>Sources: ECMWF IFS • NCEP GFS • DWD ICON • DeepMind GraphCast</span>
+          <div className="flex flex-wrap items-center justify-center gap-6 text-[11px]">
+            <span>MODELS: ECMWF IFS • GFS • ICON • GRAPHCAST</span>
             <button 
               onClick={() => setIsMethodologyOpen(true)}
-              className="text-cyan-400 hover:underline flex items-center gap-1"
+              className="text-slate-300 hover:text-white transition-colors underline underline-offset-4"
             >
-              <BookOpen className="w-3 h-3" />
-              <span>Scientific Documentation</span>
+              Scientific Protocol
+            </button>
+            <button 
+              onClick={() => setActiveTab('health')}
+              className="text-slate-300 hover:text-white transition-colors"
+            >
+              System Health
             </button>
           </div>
         </div>

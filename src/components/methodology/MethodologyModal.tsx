@@ -2,15 +2,12 @@ import React from 'react';
 import { 
   X, 
   BookOpen, 
+  Compass, 
   Cpu, 
   ShieldCheck, 
-  Compass, 
-  Layers, 
-  FileText,
-  CheckCircle2
+  Layers,
+  ArrowRight
 } from 'lucide-react';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
 
 interface MethodologyModalProps {
   isOpen: boolean;
@@ -21,113 +18,115 @@ export const MethodologyModal: React.FC<MethodologyModalProps> = ({ isOpen, onCl
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl border border-slate-700 bg-[#0E1422] shadow-2xl text-slate-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded border border-white/20 bg-[#0A0C10] shadow-2xl text-slate-200">
         
         {/* Modal Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-800 bg-[#0E1422]/95 px-6 py-4 backdrop-blur-md">
-          <div className="flex items-center space-x-2.5">
-            <BookOpen className="w-5 h-5 text-cyan-400" />
-            <h3 className="text-base font-bold text-white font-sans">
-              Scientific Methodology & Mathematical Formulation
+        <div className="sticky top-0 z-10 flex items-center justify-between hairline-b bg-[#0A0C10]/95 px-8 py-5 backdrop-blur-md">
+          <div className="space-y-0.5">
+            <div className="text-[10px] font-mono tracking-widest text-slate-400 uppercase">
+              SCIENTIFIC RESEARCH PROTOCOL
+            </div>
+            <h3 className="text-xl font-bold text-white font-sans">
+              Methodology & Mathematical Architecture
             </h3>
-            <Badge variant="scientific" className="text-[10px]">
-              PEER-GRADE SPEC
-            </Badge>
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+            className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Modal Content */}
-        <div className="p-6 space-y-6 text-xs text-slate-300 font-sans leading-relaxed">
+        <div className="p-8 space-y-10 text-sm font-sans leading-relaxed">
           
-          {/* Section 1: Core Hypothesis */}
-          <div className="space-y-2">
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
-              <Compass className="w-4 h-4 text-cyan-400" />
-              <span>1. Research Hypothesis & Core Contribution</span>
+          {/* Section 1: Research Hypothesis */}
+          <div className="space-y-3">
+            <h4 className="text-base font-bold text-white font-sans uppercase tracking-wider">
+              1. Research Thesis
             </h4>
             <p className="text-slate-300">
-              Traditional multi-model weather forecast ensembling relies on fixed-weight averaging or equal-weight arithmetic means. 
-              However, numerical weather prediction systems (NWP) and neural data-driven simulators exhibit starkly non-uniform skill profiles:
+              Atmospheric predictability is strongly context-dependent. Fixed-weight averaging or simple equal-weight multi-model ensembles fail to capitalize on the complementary strengths of diverse forecasting architectures:
             </p>
-            <ul className="list-disc pl-5 space-y-1 text-slate-400 font-mono text-[11px]">
-              <li><strong className="text-slate-200">High-Resolution NWP (ECMWF IFS 9km):</strong> Excels in deep convective initiation, boundary layer thermodynamics, and extreme rainfall peaks.</li>
-              <li><strong className="text-slate-200">Global Spectral Models (GFS 13km / ICON 13km):</strong> Provide robust planetary-scale momentum transfer and synoptic trough tracking with rapid update cycles.</li>
-              <li><strong className="text-slate-200">AI Neural Weather Simulators (GraphCast 0.25°):</strong> Autoregressively maintain large-scale geopotential coherence at medium lead times (+72h to +120h) at a fraction of compute cost, but experience spatial smoothing on localized rain bursts.</li>
-            </ul>
-            <p className="text-slate-300">
-              <strong>Harmausam</strong> tests whether <span className="text-cyan-300 font-semibold">Context-Aware Adaptive Blending</span> yields statistically significant error reductions (RMSE, MAE, CSI) over fixed and equal-weight baselines.
-            </p>
-          </div>
-
-          {/* Section 2: Mathematical Weight Formulation */}
-          <div className="space-y-2 border-t border-slate-800 pt-4">
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
-              <Cpu className="w-4 h-4 text-cyan-400" />
-              <span>2. Context-Conditioned Bayesian Softmax Loss</span>
-            </h4>
-            <p className="text-slate-300">
-              For a forecast system m in ECMWF, GFS, ICON, GraphCast in weather context C:
-            </p>
-            <div className="p-3.5 rounded-lg bg-slate-950 border border-slate-800 font-mono text-cyan-300 text-xs">
-              w_m(C) = exp(-L(m, C) / T) / sum(exp(-L(k, C) / T)), such that sum(w_m) = 1.000
-            </div>
-            <p className="text-slate-300">
-              Where the context-conditioned loss L(m, C) balances four empirical components:
-            </p>
-            <div className="p-3.5 rounded-lg bg-slate-950 border border-slate-800 font-mono text-slate-300 text-[11px] space-y-1">
-              <div>L(m, C) = RMSE(m, regime) + alpha_lead * Degradation(m, lead) + alpha_rec * RecentError(m) + alpha_disag * OutlierPenalty(m)</div>
-              <div className="text-slate-500 pt-1">• T = 1.2: Boltzmann temperature controlling distribution sharpness without pathological single-model collapse.</div>
-            </div>
-          </div>
-
-          {/* Section 3: Uncertainty & Disagreement */}
-          <div className="space-y-2 border-t border-slate-800 pt-4">
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
-              <Layers className="w-4 h-4 text-cyan-400" />
-              <span>3. Epistemic Disagreement & Aleatoric Uncertainty</span>
-            </h4>
-            <p className="text-slate-300">
-              Confidence is never arbitrarily declared. It is mathematically coupled to model spread and atmospheric chaos:
-            </p>
-            <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 font-mono text-xs text-slate-300 space-y-1">
-              <div>sigma_epistemic = sqrt(sum(w_m * (F_m - F_blend)^2)) (inter-model disagreement)</div>
-              <div>S_total = sqrt(sigma_epistemic^2 + sigma_aleatoric^2(var, regime))</div>
-              <div>CI_90% = [F_blend - 1.645 * S_total, F_blend + 1.645 * S_total]</div>
-            </div>
-          </div>
-
-          {/* Section 4: Verification Protocol (No Leakage) */}
-          <div className="space-y-2 border-t border-slate-800 pt-4">
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>4. Time-Aware Chronological Out-of-Sample Split</span>
-            </h4>
-            <p className="text-slate-300">
-              Random K-fold train/test splits cause severe temporal autocorrelation leakage in atmospheric time series. 
-              All benchmarks in Harmausam strictly utilize chronological blocking:
-            </p>
-            <div className="grid grid-cols-3 gap-2 font-mono text-center text-xs">
-              <div className="p-2.5 rounded bg-slate-900 border border-slate-800">
-                <span className="text-[10px] text-slate-400 block">TRAINING SPLIT</span>
-                <span className="text-white font-bold">Days 1 – 90</span>
-                <span className="text-[10px] text-slate-500 block">Weights derived</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-xs pt-2">
+              <div className="p-3.5 rounded bg-white/5 space-y-1">
+                <span className="font-semibold text-white block">ECMWF IFS (9km)</span>
+                <p className="text-slate-400 font-sans text-xs">
+                  Superior convective initiation and thermodynamic boundary layer capture, excelling during extreme precipitation and severe frontogenesis.
+                </p>
               </div>
-              <div className="p-2.5 rounded bg-slate-900 border border-slate-800">
-                <span className="text-[10px] text-slate-400 block">VALIDATION SPLIT</span>
-                <span className="text-white font-bold">Days 91 – 105</span>
-                <span className="text-[10px] text-slate-500 block">Hyperparameters (T)</span>
+              <div className="p-3.5 rounded bg-white/5 space-y-1">
+                <span className="font-semibold text-white block">GraphCast AI (0.25°)</span>
+                <p className="text-slate-400 font-sans text-xs">
+                  Autoregressive global neural simulator trained on ERA5; preserves synoptic geopotential patterns at medium lead times (+72h to +120h) at ultra-low inference latency.
+                </p>
               </div>
-              <div className="p-2.5 rounded bg-cyan-950/40 border border-cyan-500/40">
-                <span className="text-[10px] text-cyan-400 block">TEST SPLIT</span>
-                <span className="text-cyan-200 font-bold">Days 106 – 120</span>
-                <span className="text-[10px] text-cyan-400 block">Strict out-of-sample</span>
+            </div>
+          </div>
+
+          {/* Section 2: Pipeline Sequence Diagram */}
+          <div className="space-y-4">
+            <h4 className="text-base font-bold text-white font-sans uppercase tracking-wider">
+              2. End-to-End Pipeline Architecture
+            </h4>
+            
+            <div className="p-6 rounded border border-white/10 bg-black/40 space-y-3 font-mono text-xs">
+              <div className="flex flex-wrap items-center gap-2 text-white">
+                <span className="p-2 rounded bg-white/10">1. FORECAST SOURCES</span>
+                <span className="text-slate-500">➔</span>
+                <span className="p-2 rounded bg-white/10">2. TEMPORAL & SPATIAL ALIGNMENT</span>
+                <span className="text-slate-500">➔</span>
+                <span className="p-2 rounded bg-white/10">3. REGIME DETECTION</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-white pt-2">
+                <span className="text-slate-500">➔</span>
+                <span className="p-2 rounded bg-white/10">4. HISTORICAL SKILL</span>
+                <span className="text-slate-500">➔</span>
+                <span className="p-2 rounded bg-white text-black font-bold">5. ADAPTIVE WEIGHTING</span>
+                <span className="text-slate-500">➔</span>
+                <span className="p-2 rounded bg-white/10">6. VERIFICATION</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Mathematical Formulation */}
+          <div className="space-y-3">
+            <h4 className="text-base font-bold text-white font-sans uppercase tracking-wider">
+              3. Context-Conditioned Bayesian Softmax Weighting
+            </h4>
+            <p className="text-slate-300">
+              Source weights are calculated via normalized Boltzmann softmax loss over context-conditioned error terms:
+            </p>
+            <div className="p-4 rounded bg-black/60 border border-white/10 font-mono text-xs text-white space-y-2">
+              <div>w_m(C) = exp( -L(m, C) / T ) / ∑ exp( -L(k, C) / T ),  with ∑ w_m = 1.000</div>
+              <div className="text-slate-400 text-[11px] pt-1">
+                L(m, C) = RMSE_regime(m) + α_lead · Degradation(m, lead) + α_rec · RecentError(m) + α_disag · ConsensusPenalty(m)
+              </div>
+            </div>
+          </div>
+
+          {/* Section 4: Chronological Out-of-Sample Split */}
+          <div className="space-y-3">
+            <h4 className="text-base font-bold text-white font-sans uppercase tracking-wider">
+              4. Chronological Verification Protocol (No Leakage)
+            </h4>
+            <p className="text-slate-300">
+              To eliminate temporal data contamination, all evaluation utilizes strict chronological time blocks:
+            </p>
+            <div className="grid grid-cols-3 gap-3 font-mono text-xs text-center">
+              <div className="p-3 rounded bg-white/5">
+                <span className="text-slate-400 block text-[10px]">TRAIN (DAYS 1-90)</span>
+                <span className="text-white font-bold">Weight Optimization</span>
+              </div>
+              <div className="p-3 rounded bg-white/5">
+                <span className="text-slate-400 block text-[10px]">VALIDATE (DAYS 91-105)</span>
+                <span className="text-white font-bold">Temperature (T=1.2)</span>
+              </div>
+              <div className="p-3 rounded border border-white text-white">
+                <span className="text-slate-400 block text-[10px]">TEST (DAYS 106-120)</span>
+                <span className="font-bold">Strict Out-of-Sample</span>
               </div>
             </div>
           </div>
@@ -135,10 +134,13 @@ export const MethodologyModal: React.FC<MethodologyModalProps> = ({ isOpen, onCl
         </div>
 
         {/* Modal Footer */}
-        <div className="border-t border-slate-800 bg-[#0E1422] px-6 py-3 flex justify-end">
-          <Button onClick={onClose} size="sm" variant="default" className="bg-cyan-600 hover:bg-cyan-500 text-white font-mono text-xs">
+        <div className="hairline-t bg-[#0A0C10] px-8 py-4 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-5 py-2 rounded bg-white text-black font-medium text-xs hover:bg-slate-200 transition-colors"
+          >
             Close Methodology
-          </Button>
+          </button>
         </div>
 
       </div>

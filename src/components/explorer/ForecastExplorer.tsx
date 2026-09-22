@@ -11,21 +11,12 @@ import {
   Legend 
 } from 'recharts';
 import { 
-  MapPin, 
-  Sliders, 
-  Calendar, 
-  Clock, 
   Play, 
   Pause, 
-  Info, 
-  Eye, 
-  Maximize2,
-  Layers,
-  Thermometer,
-  CloudRain,
-  Wind,
-  Droplets,
-  Gauge
+  MapPin, 
+  Layers, 
+  Compass,
+  ChevronRight
 } from 'lucide-react';
 import { 
   BlendedForecastResult, 
@@ -33,9 +24,6 @@ import {
   WeatherVariable 
 } from '../../core/types';
 import { GLOBAL_STATIONS } from '../../core/data/stations';
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
-import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
 
 interface ForecastExplorerProps {
   currentResult: BlendedForecastResult;
@@ -61,18 +49,20 @@ export const ForecastExplorer: React.FC<ForecastExplorerProps> = ({
   isDemonstrationData,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [selectedSourceFilter, setSelectedSourceFilter] = useState<string>('ALL');
 
-  const variables: { id: WeatherVariable; label: string; icon: any; unit: string }[] = [
-    { id: 'temperature_2m', label: '2m Temperature', icon: Thermometer, unit: '°C' },
-    { id: 'precipitation', label: 'Precipitation', icon: CloudRain, unit: 'mm/3h' },
-    { id: 'wind_speed_10m', label: '10m Wind Speed', icon: Wind, unit: 'm/s' },
-    { id: 'relative_humidity_2m', label: 'Relative Humidity', icon: Droplets, unit: '%' },
-    { id: 'surface_pressure', label: 'Surface Pressure', icon: Gauge, unit: 'hPa' },
+  const variables: { id: WeatherVariable; label: string; unit: string }[] = [
+    { id: 'temperature_2m', label: 'Temperature', unit: '°C' },
+    { id: 'precipitation', label: 'Rainfall', unit: 'mm/3h' },
+    { id: 'wind_speed_10m', label: 'Wind Speed', unit: 'm/s' },
+    { id: 'relative_humidity_2m', label: 'Humidity', unit: '%' },
+    { id: 'surface_pressure', label: 'Pressure', unit: 'hPa' },
   ];
 
   const leadTimes = [0, 6, 12, 24, 48, 72, 120, 168];
+  const currentUnit = variables.find(v => v.id === selectedVariable)?.unit || '';
 
-  // Prepare chart dataset
+  // Chart dataset
   const chartData = timeSeriesTrajectory.map((step) => {
     return {
       lead: `+${step.leadTimeHours}h`,
@@ -90,9 +80,7 @@ export const ForecastExplorer: React.FC<ForecastExplorerProps> = ({
     };
   });
 
-  const currentUnit = variables.find(v => v.id === selectedVariable)?.unit || '';
-
-  // Interactive timeline play / step
+  // Timeline scrubber player
   React.useEffect(() => {
     let interval: any;
     if (isPlaying) {
@@ -100,315 +88,298 @@ export const ForecastExplorer: React.FC<ForecastExplorerProps> = ({
         const idx = leadTimes.indexOf(leadTimeHours);
         const nextIdx = (idx + 1) % leadTimes.length;
         setLeadTimeHours(leadTimes[nextIdx]);
-      }, 1800);
+      }, 1600);
     }
     return () => clearInterval(interval);
-  }, [isPlaying, leadTimeHours]);
+  }, [isPlaying, leadTimeHours, setLeadTimeHours]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 py-2">
       
-      {/* Variable & Controls Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-[#0E1422] p-4 rounded-xl border border-slate-800">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-xs font-mono text-slate-400 mr-2 uppercase tracking-wider">
-            Predictand:
-          </span>
+      {/* 1. Minimal Top Control Header (Tesla / SpaceX minimalism) */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 hairline-b pb-4">
+        
+        {/* Variable Switcher */}
+        <div className="flex flex-wrap items-center gap-1">
           {variables.map((v) => {
-            const Icon = v.icon;
             const isSelected = selectedVariable === v.id;
             return (
               <button
                 key={v.id}
                 onClick={() => setSelectedVariable(v.id)}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                className={`px-3 py-1.5 rounded text-xs font-sans transition-colors ${
                   isSelected 
-                    ? 'bg-cyan-600 text-white shadow-sm font-semibold' 
-                    : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-800'
+                    ? 'bg-white text-black font-semibold' 
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{v.label}</span>
+                {v.label}
               </button>
             );
           })}
         </div>
 
-        <div className="flex items-center space-x-2">
-          <Badge variant="scientific" className="border-cyan-500/30 text-cyan-300">
-            {isDemonstrationData ? 'BENCHMARK RUN' : 'LIVE RUN'}
-          </Badge>
+        {/* Source Filter Selector */}
+        <div className="flex items-center space-x-2 text-xs font-mono text-slate-400">
+          <span>SOURCE:</span>
+          {['ALL', 'ECMWF', 'GFS', 'ICON', 'GRAPHCAST'].map((src) => (
+            <button
+              key={src}
+              onClick={() => setSelectedSourceFilter(src)}
+              className={`px-2 py-1 rounded transition-colors ${
+                selectedSourceFilter === src 
+                  ? 'text-white font-bold bg-white/10' 
+                  : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              {src === 'GRAPHCAST' ? 'AI' : src}
+            </button>
+          ))}
+        </div>
+
+      </div>
+
+      {/* 2. Dominant Geospatial Weather Map Canvas (Occupies most of visual space) */}
+      <div className="relative w-full h-[520px] rounded border border-white/10 bg-[#0A0C10] overflow-hidden">
+        
+        {/* World Coordinate Graticule Grid */}
+        <svg 
+          className="absolute inset-0 w-full h-full opacity-20 pointer-events-none" 
+          viewBox="0 0 1000 500" 
+          preserveAspectRatio="none"
+        >
+          {[100, 200, 300, 400].map((y) => (
+            <line key={`lat-${y}`} x1="0" y1={y} x2="1000" y2={y} stroke="#475569" strokeWidth="0.8" strokeDasharray="3 3" />
+          ))}
+          {[150, 300, 450, 600, 750, 900].map((x) => (
+            <line key={`lon-${x}`} x1={x} y1="0" x2={x} y2="500" stroke="#475569" strokeWidth="0.8" strokeDasharray="3 3" />
+          ))}
+          <line x1="0" y1="250" x2="1000" y2="250" stroke="#64748B" strokeWidth="1.2" />
+          <line x1="500" y1="0" x2="500" y2="500" stroke="#64748B" strokeWidth="1.2" />
+        </svg>
+
+        {/* Global Reference Meteorological Stations */}
+        {GLOBAL_STATIONS.map((st) => {
+          const posX = ((st.longitude + 180) / 360) * 100;
+          const posY = ((90 - st.latitude) / 180) * 100;
+          const isActive = st.id === station.id;
+
+          return (
+            <div
+              key={st.id}
+              onClick={() => setStation(st)}
+              style={{ left: `${posX}%`, top: `${posY}%` }}
+              className={`absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer group z-20`}
+            >
+              <div className="relative flex flex-col items-center">
+                {/* Active Pulse Ring */}
+                {isActive && (
+                  <span className="absolute h-8 w-8 rounded-full border border-white/40 animate-ping pointer-events-none" />
+                )}
+
+                {/* Clean Marker */}
+                <div className={`h-3 w-3 rounded-full transition-transform group-hover:scale-125 ${
+                  isActive 
+                    ? 'bg-white shadow-[0_0_12px_rgba(255,255,255,0.8)]' 
+                    : 'bg-slate-600 group-hover:bg-slate-300'
+                }`} />
+
+                {/* Minimalist Station Label */}
+                <div className={`mt-2 px-2 py-0.5 rounded text-[11px] font-mono tracking-tight whitespace-nowrap transition-colors ${
+                  isActive 
+                    ? 'bg-white text-black font-semibold shadow' 
+                    : 'bg-[#08090C]/80 text-slate-300 border border-white/10 group-hover:text-white'
+                }`}>
+                  {st.name.split(' (')[0]}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Floating Telemetry Box (NASA Mission Control style) */}
+        <div className="absolute top-4 left-4 p-4 rounded bg-[#08090C]/90 border border-white/10 font-mono text-xs text-slate-300 space-y-1 backdrop-blur-md">
+          <div className="text-[10px] tracking-widest text-slate-400 uppercase">ACTIVE OBSERVATION STATION</div>
+          <div className="text-base font-bold text-white font-sans">{station.name}</div>
+          <div className="text-slate-400 text-[11px]">
+            {station.latitude.toFixed(2)}°N, {station.longitude.toFixed(2)}°E • Elev {station.elevationMeters}m MSL
+          </div>
+          <div className="pt-2 hairline-t text-slate-400 text-[11px] flex items-center justify-between gap-4">
+            <span>Forecast Lead:</span>
+            <span className="text-white font-bold">+{leadTimeHours} Hours</span>
+          </div>
+        </div>
+
+      </div>
+
+      {/* 3. Operational Timeline Scrubber (Bottom of Map) */}
+      <div className="p-4 rounded border border-white/10 bg-[#0D0F15] space-y-3">
+        <div className="flex items-center justify-between text-xs font-mono">
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setIsPlaying(!isPlaying)}
+              className="p-1.5 rounded hover:bg-white/10 text-white transition-colors"
+              title={isPlaying ? 'Pause timeline' : 'Animate through lead times'}
+            >
+              {isPlaying ? <Pause className="w-4 h-4 text-amber-400" /> : <Play className="w-4 h-4 text-white" />}
+            </button>
+            <span className="text-slate-400">TIMELINE:</span>
+            <span className="text-white font-bold">+{leadTimeHours}h ({Math.round(leadTimeHours / 24 * 10) / 10} Days out)</span>
+          </div>
+
+          <span className="text-slate-400 text-[11px]">
+            Target Valid Window: {new Date(currentResult.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-8 gap-1.5">
+          {leadTimes.map((lt) => {
+            const isActive = lt === leadTimeHours;
+            return (
+              <button
+                key={lt}
+                onClick={() => setLeadTimeHours(lt)}
+                className={`py-2 px-1 text-center font-mono text-xs rounded transition-colors ${
+                  isActive 
+                    ? 'bg-white text-black font-bold' 
+                    : 'bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white'
+                }`}
+              >
+                <div>+{lt}h</div>
+                <div className="text-[9px] opacity-60">
+                  {lt === 0 ? 'Init' : lt < 24 ? 'Short' : lt <= 72 ? 'Medium' : 'Extended'}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Geospatial Map Section (Dominant visual interface) */}
-      <Card className="border-slate-800 bg-[#0E1422] overflow-hidden">
-        <CardHeader className="py-3 px-5 border-b border-slate-800/80 flex flex-row items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <MapPin className="w-4 h-4 text-cyan-400" />
-            <CardTitle className="text-sm font-semibold">Geospatial Station Network & Climatological Baselines</CardTitle>
-          </div>
-          <span className="text-[11px] font-mono text-slate-400">
-            Click any station pin to load its multi-model forecast trajectory
-          </span>
-        </CardHeader>
-        <CardContent className="p-0 relative">
-          
-          {/* Scientific Geospatial Map Canvas */}
-          <div className="relative w-full h-[320px] bg-slate-950 overflow-hidden flex items-center justify-center">
-            {/* Vector World Grid Graphic */}
-            <svg 
-              className="absolute inset-0 w-full h-full opacity-30 pointer-events-none" 
-              viewBox="0 0 1000 500" 
-              preserveAspectRatio="none"
-            >
-              {/* Latitude and Longitude Graticule lines */}
-              {[100, 200, 300, 400].map((y) => (
-                <line key={`lat-${y}`} x1="0" y1={y} x2="1000" y2={y} stroke="#334155" strokeWidth="0.75" strokeDasharray="3 3" />
-              ))}
-              {[150, 300, 450, 600, 750, 900].map((x) => (
-                <line key={`lon-${x}`} x1={x} y1="0" x2={x} y2="500" stroke="#334155" strokeWidth="0.75" strokeDasharray="3 3" />
-              ))}
-              {/* Equator & Prime Meridian */}
-              <line x1="0" y1="250" x2="1000" y2="250" stroke="#475569" strokeWidth="1.2" />
-              <line x1="500" y1="0" x2="500" y2="500" stroke="#475569" strokeWidth="1.2" />
-            </svg>
-
-            {/* Stylized Continents Outline Backing */}
-            <div className="absolute inset-0 opacity-15 pointer-events-none flex items-center justify-center text-slate-600 font-mono text-[80px] font-black select-none tracking-widest">
-              GLOBAL GRID
-            </div>
-
-            {/* Global Station Pins on Map */}
-            {GLOBAL_STATIONS.map((st) => {
-              // Mercator/Equirectangular projection approximation:
-              // X: (lon + 180) / 360 * 100%
-              // Y: (90 - lat) / 180 * 100%
-              const posX = ((st.longitude + 180) / 360) * 100;
-              const posY = ((90 - st.latitude) / 180) * 100;
-              const isActive = st.id === station.id;
-
-              return (
-                <div
-                  key={st.id}
-                  onClick={() => setStation(st)}
-                  style={{ left: `${posX}%`, top: `${posY}%` }}
-                  className={`absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer group transition-all duration-300 z-10`}
-                >
-                  <div className="relative flex items-center justify-center">
-                    {/* Active Ping */}
-                    {isActive && (
-                      <span className="absolute h-8 w-8 rounded-full bg-cyan-400/25 animate-ping" />
-                    )}
-                    
-                    {/* Marker Dot */}
-                    <div className={`h-4 w-4 rounded-full border-2 transition-transform group-hover:scale-125 flex items-center justify-center ${
-                      isActive 
-                        ? 'bg-cyan-500 border-white shadow-lg shadow-cyan-500/50' 
-                        : 'bg-slate-800 border-slate-400 group-hover:border-cyan-400'
-                    }`}>
-                      <div className="h-1.5 w-1.5 rounded-full bg-white" />
-                    </div>
-
-                    {/* Station Tag Tooltip */}
-                    <div className={`absolute top-5 left-1/2 -translate-x-1/2 whitespace-nowrap px-2 py-1 rounded text-[11px] font-mono transition-all pointer-events-none ${
-                      isActive 
-                        ? 'bg-slate-900 border border-cyan-500/50 text-cyan-200 shadow-md z-20' 
-                        : 'bg-slate-950/80 border border-slate-800 text-slate-300 group-hover:opacity-100 opacity-75'
-                    }`}>
-                      <div className="font-semibold">{st.name.split(' ')[0]}</div>
-                      <div className="text-[9px] text-slate-400">{st.id} ({st.country})</div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Map Legend Overlay in corner */}
-            <div className="absolute bottom-3 left-3 bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 text-[10px] font-mono text-slate-400 pointer-events-none">
-              <div className="text-slate-200 font-semibold mb-1">STATION TELEMETRY</div>
-              <div>Selected: <span className="text-cyan-300 font-bold">{station.name}</span></div>
-              <div>Lat/Lon: {station.latitude}°N, {station.longitude}°E</div>
-              <div>Elevation: {station.elevationMeters}m MSL</div>
-            </div>
-
-            <div className="absolute top-3 right-3 bg-slate-900/90 border border-slate-800 rounded-lg p-2 text-[11px] font-mono text-slate-400">
-              Active Station: <span className="text-cyan-300 font-bold">{station.name}</span>
-            </div>
-          </div>
-
-        </CardContent>
-      </Card>
-
-      {/* Multi-Model Ensemble Spread Chart & Fan Diagram */}
-      <Card className="border-slate-800 bg-[#0E1422]">
-        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
+      {/* 4. Integrated Multi-Model Trajectory Chart (Clean & Restrained) */}
+      <div className="p-6 rounded border border-white/10 bg-[#0D0F15] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <span>Multi-Model Trajectory & Ensemble Spread</span>
-              <Badge variant="scientific" className="font-mono text-[10px]">
-                {variables.find(v => v.id === selectedVariable)?.label} ({currentUnit})
-              </Badge>
-            </CardTitle>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Spaghetti forecast trajectories for NWP (ECMWF, GFS, ICON) & AI (GraphCast) against Adaptive Blend and 90% confidence envelope
+            <h3 className="text-base font-semibold text-white font-sans">
+              Multi-Model Ensemble Trajectory & 90% Confidence Envelope
+            </h3>
+            <p className="text-xs text-slate-400">
+              ECMWF, GFS, ICON, and GraphCast forecast paths compared against the Adaptive Blend
             </p>
           </div>
+          <span className="text-xs font-mono text-slate-400">
+            Unit: <strong className="text-white">{currentUnit}</strong>
+          </span>
+        </div>
 
-          <div className="flex items-center space-x-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setIsPlaying(!isPlaying)}
-              className="text-xs font-mono h-8 border-slate-700 hover:bg-slate-800"
-            >
-              {isPlaying ? <Pause className="w-3.5 h-3.5 mr-1 text-amber-400" /> : <Play className="w-3.5 h-3.5 mr-1 text-cyan-400" />}
-              <span>{isPlaying ? 'Pause' : 'Animate Lead'}</span>
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[360px] w-full mt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={chartData} margin={{ top: 15, right: 20, bottom: 20, left: 10 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" vertical={false} />
-                <XAxis 
-                  dataKey="lead" 
-                  stroke="#64748B" 
-                  tick={{ fill: '#94A3B8', fontSize: 11, fontFamily: 'monospace' }} 
-                />
-                <YAxis 
-                  stroke="#64748B" 
-                  tick={{ fill: '#94A3B8', fontSize: 11, fontFamily: 'monospace' }} 
-                  unit={` ${currentUnit}`}
-                  domain={['auto', 'auto']}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#0B0F17', 
-                    borderColor: '#1E293B', 
-                    borderRadius: '8px', 
-                    fontFamily: 'monospace',
-                    fontSize: '12px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
-                  }} 
-                />
-                <Legend 
-                  verticalAlign="top" 
-                  height={36} 
-                  wrapperStyle={{ fontSize: '11px', fontFamily: 'monospace' }} 
-                />
+        <div className="h-[340px] w-full pt-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={chartData} margin={{ top: 10, right: 10, bottom: 20, left: 10 }}>
+              <CartesianGrid strokeDasharray="2 2" stroke="rgba(255,255,255,0.06)" vertical={false} />
+              <XAxis 
+                dataKey="lead" 
+                stroke="#64748B" 
+                tick={{ fill: '#8E8E93', fontSize: 11, fontFamily: 'monospace' }} 
+              />
+              <YAxis 
+                stroke="#64748B" 
+                tick={{ fill: '#8E8E93', fontSize: 11, fontFamily: 'monospace' }} 
+                domain={['auto', 'auto']}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#0E1015', 
+                  borderColor: 'rgba(255,255,255,0.1)', 
+                  borderRadius: '4px', 
+                  fontFamily: 'monospace',
+                  fontSize: '12px',
+                  color: '#FFFFFF'
+                }} 
+              />
+              <Legend wrapperStyle={{ fontSize: '11px', fontFamily: 'monospace', paddingTop: '10px' }} />
 
-                {/* Shaded 90% Confidence Uncertainty Envelope */}
-                <Area 
-                  type="monotone" 
-                  dataKey="Upper90" 
-                  stroke="none" 
-                  fill="#06B6D4" 
-                  fillOpacity={0.12} 
-                  name="90% Confidence Envelope" 
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="Lower90" 
-                  stroke="none" 
-                  fill="#06B6D4" 
-                  fillOpacity={0.0} 
-                />
+              {/* 90% Confidence Uncertainty Envelope */}
+              <Area 
+                type="monotone" 
+                dataKey="Upper90" 
+                stroke="none" 
+                fill="#3B82F6" 
+                fillOpacity={0.12} 
+                name="90% Confidence Envelope" 
+              />
+              <Area 
+                type="monotone" 
+                dataKey="Lower90" 
+                stroke="none" 
+                fill="#3B82F6" 
+                fillOpacity={0.0} 
+              />
 
-                {/* Individual Models (Spaghetti) */}
+              {/* Individual Models */}
+              {(selectedSourceFilter === 'ALL' || selectedSourceFilter === 'ECMWF') && (
                 <Line 
                   type="monotone" 
                   dataKey="ECMWF" 
                   stroke="#3B82F6" 
                   strokeWidth={1.5} 
-                  dot={{ r: 2 }} 
+                  dot={false}
                   name="ECMWF IFS (9km)" 
                 />
+              )}
+              {(selectedSourceFilter === 'ALL' || selectedSourceFilter === 'GFS') && (
                 <Line 
                   type="monotone" 
                   dataKey="GFS" 
                   stroke="#10B981" 
                   strokeWidth={1.5} 
-                  dot={{ r: 2 }} 
+                  dot={false}
                   name="NCEP GFS (13km)" 
                 />
+              )}
+              {(selectedSourceFilter === 'ALL' || selectedSourceFilter === 'ICON') && (
                 <Line 
                   type="monotone" 
                   dataKey="ICON" 
                   stroke="#F59E0B" 
                   strokeWidth={1.5} 
-                  dot={{ r: 2 }} 
+                  dot={false}
                   name="DWD ICON (13km)" 
                 />
+              )}
+              {(selectedSourceFilter === 'ALL' || selectedSourceFilter === 'GRAPHCAST') && (
                 <Line 
                   type="monotone" 
                   dataKey="GraphCast" 
-                  stroke="#A855F7" 
+                  stroke="#8B5CF6" 
                   strokeWidth={1.5} 
                   strokeDasharray="4 4"
-                  dot={{ r: 2 }} 
+                  dot={false}
                   name="GraphCast AI (0.25°)" 
                 />
+              )}
 
-                {/* Verified Ground Truth Observations (when available) */}
-                <Line 
-                  type="monotone" 
-                  dataKey="Observation" 
-                  stroke="#38BDF8" 
-                  strokeWidth={2.5} 
-                  dot={{ r: 4, stroke: '#38BDF8', fill: '#0E1422' }} 
-                  name="Verified Observation (Ground Truth)" 
-                />
+              {/* Observation (when verified ground truth exists) */}
+              <Line 
+                type="monotone" 
+                dataKey="Observation" 
+                stroke="#38BDF8" 
+                strokeWidth={2} 
+                dot={{ r: 3, fill: '#38BDF8' }} 
+                name="Verified Observation" 
+              />
 
-                {/* Adaptive Blended Forecast (Hero Line) */}
-                <Line 
-                  type="monotone" 
-                  dataKey="AdaptiveBlend" 
-                  stroke="#F43F5E" 
-                  strokeWidth={3} 
-                  dot={{ r: 4, stroke: '#F43F5E', fill: '#FFF' }} 
-                  name="Adaptive Context Blend" 
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Lead Time Timeline Scrubber Control */}
-          <div className="mt-4 pt-4 border-t border-slate-800/80 space-y-2">
-            <div className="flex items-center justify-between text-xs font-mono">
-              <span className="text-slate-400 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Forecast Lead Time Scrubber:</span>
-              </span>
-              <span className="text-cyan-300 font-bold text-sm">
-                +{leadTimeHours} Hours ({Math.round(leadTimeHours / 24 * 10) / 10} Days out)
-              </span>
-            </div>
-
-            <div className="grid grid-cols-8 gap-1.5">
-              {leadTimes.map((lt) => {
-                const isActive = lt === leadTimeHours;
-                return (
-                  <button
-                    key={lt}
-                    onClick={() => setLeadTimeHours(lt)}
-                    className={`py-2 px-1 rounded-md text-xs font-mono transition-all text-center border ${
-                      isActive 
-                        ? 'bg-cyan-600 text-white font-bold border-cyan-400 shadow-md shadow-cyan-950/40' 
-                        : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
-                    }`}
-                  >
-                    <div>+{lt}h</div>
-                    <div className="text-[9px] opacity-75">{lt === 0 ? 'Init' : lt < 24 ? 'Short' : lt <= 72 ? 'Medium' : 'Extended'}</div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-        </CardContent>
-      </Card>
+              {/* Adaptive Blend (White Dominant Line) */}
+              <Line 
+                type="monotone" 
+                dataKey="AdaptiveBlend" 
+                stroke="#FFFFFF" 
+                strokeWidth={2.5} 
+                dot={{ r: 3, fill: '#FFFFFF' }} 
+                name="Adaptive Blended Forecast" 
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
 
     </div>
   );
