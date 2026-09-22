@@ -21,7 +21,6 @@ export const MapTelemetryOverlay: React.FC<MapTelemetryOverlayProps> = ({
   currentResult,
   isDemonstrationData,
 }) => {
-  // Value at station based on mode
   const val = displayMode === 'SINGLE'
     ? currentResult.individualForecasts[selectedSource]
     : displayMode === 'DISAGREEMENT'
@@ -38,55 +37,92 @@ export const MapTelemetryOverlay: React.FC<MapTelemetryOverlayProps> = ({
     ? '%' 
     : 'hPa';
 
-  const sourceName = displayMode === 'SINGLE'
-    ? `${selectedSource} 9km NWP`
-    : displayMode === 'DISAGREEMENT'
-    ? 'Multi-Model Spread (σ)'
-    : 'Adaptive Bayesian Blend';
+  const varName = selectedVariable === 'temperature_2m'
+    ? 'TEMPERATURE (2M)'
+    : selectedVariable === 'precipitation'
+    ? 'PRECIPITATION (3H)'
+    : selectedVariable === 'wind_speed_10m'
+    ? 'WIND SPEED (10M)'
+    : selectedVariable === 'relative_humidity_2m'
+    ? 'RELATIVE HUMIDITY'
+    : 'SURFACE PRESSURE';
 
   return (
-    <div className="absolute top-4 left-4 z-20 p-4 rounded bg-[#08090C]/85 border border-white/10 backdrop-blur-md text-slate-300 font-sans pointer-events-none max-w-[260px] shadow-2xl transition-all">
-      {/* Header status */}
-      <div className="flex items-center justify-between text-[9px] font-mono tracking-widest text-slate-400 uppercase">
-        <span className="truncate">{station.region.split(' (')[0]}</span>
-        <span className="px-1.5 py-0.5 rounded text-[8px] bg-white/5 border border-white/10 text-slate-300 font-bold">
-          {isDemonstrationData ? 'DEMO DATA' : 'LIVE STREAM'}
+    <div className="absolute top-3 left-3 z-20 p-3.5 rounded bg-[#08090C]/90 border border-white/15 backdrop-blur-md text-slate-300 font-mono pointer-events-none w-64 shadow-2xl transition-all">
+      {/* 1. Header with Data Transparency Tag */}
+      <div className="flex items-center justify-between text-[8px] tracking-widest text-slate-400 uppercase hairline-b pb-2">
+        <span>HARMAUSAM OPERATIONAL CONSOLE</span>
+        <span className="px-1 py-0.5 rounded bg-white/5 border border-white/10 text-cyan-300 font-bold">
+          {isDemonstrationData ? 'DEMO' : 'LIVE'}
         </span>
       </div>
 
-      {/* Main Station Name & Big Value */}
-      <div className="mt-2">
-        <div className="text-xs uppercase tracking-wider text-slate-400 font-mono">
-          {station.name.split(' (')[0]}
+      {/* 2. Structured Meteorological Information Grid */}
+      <div className="space-y-2.5 mt-2.5">
+        
+        {/* Location & Coordinates */}
+        <div>
+          <div className="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">
+            LOCATION
+          </div>
+          <div className="text-sm font-bold text-white font-sans mt-0.5">
+            {station.name.toUpperCase()}
+          </div>
+          <div className="text-[10px] text-cyan-300">
+            {station.latitude.toFixed(2)}°N · {station.longitude.toFixed(2)}°E
+          </div>
         </div>
-        <div className="flex items-baseline space-x-1.5 mt-0.5">
-          <span className="text-3xl font-bold tracking-tight text-white font-sans">
-            {displayMode === 'DISAGREEMENT' ? `σ ${val.toFixed(2)}` : val.toFixed(1)}
-          </span>
-          {displayMode !== 'DISAGREEMENT' && (
-            <span className="text-sm font-mono text-slate-400">{unit}</span>
-          )}
-        </div>
-      </div>
 
-      {/* Meteorological Metadata Rows */}
-      <div className="mt-3 pt-2.5 hairline-t space-y-1.5 text-[11px] font-mono">
-        <div className="flex justify-between">
-          <span className="text-slate-400">Forecast:</span>
-          <span className="text-white font-medium">+{leadTimeHours} Hours</span>
+        {/* Target Lead Horizon */}
+        <div className="hairline-t pt-2">
+          <div className="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">
+            TARGET LEAD
+          </div>
+          <div className="text-xs font-bold text-white">
+            +{leadTimeHours} HOURS
+          </div>
         </div>
-        <div className="flex justify-between">
-          <span className="text-slate-400">Source:</span>
-          <span className="text-white font-medium truncate max-w-[130px]">{sourceName}</span>
+
+        {/* Variable & Primary Readout */}
+        <div className="hairline-t pt-2 flex items-baseline justify-between">
+          <div>
+            <div className="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">
+              VARIABLE
+            </div>
+            <div className="text-[11px] font-bold text-slate-200">
+              {varName}
+            </div>
+          </div>
+          <div className="text-right">
+            <span className="text-lg font-bold text-white font-sans">
+              {displayMode === 'DISAGREEMENT' ? `σ ${val.toFixed(2)}` : val.toFixed(1)}
+            </span>
+            {displayMode !== 'DISAGREEMENT' && (
+              <span className="text-xs text-slate-400 ml-1">{unit}</span>
+            )}
+          </div>
         </div>
-        <div className="flex justify-between">
-          <span className="text-slate-400">Regime:</span>
-          <span className="text-white font-medium">{currentResult.context.detectedRegime}</span>
+
+        {/* Weather Regime Context */}
+        <div className="hairline-t pt-2">
+          <div className="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">
+            WEATHER REGIME
+          </div>
+          <div className="text-xs font-bold text-white uppercase">
+            {currentResult.context.detectedRegime}
+          </div>
         </div>
-        <div className="flex justify-between">
-          <span className="text-slate-400">Model spread:</span>
-          <span className="text-white font-medium">{currentResult.modelSpread.toFixed(2)}</span>
+
+        {/* Model Spread Disagreement */}
+        <div className="hairline-t pt-2 flex justify-between items-center">
+          <div className="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">
+            MODEL SPREAD
+          </div>
+          <div className="text-xs font-bold text-cyan-300">
+            {currentResult.modelSpread.toFixed(2)}{unit}
+          </div>
         </div>
+
       </div>
     </div>
   );

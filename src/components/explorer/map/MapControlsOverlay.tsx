@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Minus, Crosshair } from 'lucide-react';
+import { Plus, Minus, Compass } from 'lucide-react';
 
 interface MapControlsOverlayProps {
   onZoomIn: () => void;
@@ -13,14 +13,14 @@ export const MapControlsOverlay: React.FC<MapControlsOverlayProps> = ({
   onRecenter,
 }) => {
   return (
-    <div className="absolute top-4 right-4 z-20 flex flex-col space-y-1 bg-[#08090C]/85 border border-white/10 backdrop-blur-md p-1 rounded shadow-xl">
+    <div className="absolute top-3 right-3 z-20 flex flex-col space-y-1 bg-[#08090C]/90 border border-white/15 backdrop-blur-md p-0.5 rounded shadow-xl font-mono">
       <button
         onClick={onZoomIn}
         aria-label="Zoom in"
-        className="w-7 h-7 rounded hover:bg-white/10 text-slate-300 hover:text-white flex items-center justify-center transition-colors text-xs font-mono"
+        className="w-6 h-6 rounded hover:bg-white/10 text-slate-300 hover:text-white flex items-center justify-center transition-colors text-xs"
         title="Zoom in (+)"
       >
-        <Plus className="w-3.5 h-3.5" />
+        <Plus className="w-3 h-3" />
       </button>
 
       <div className="w-full h-px bg-white/10" />
@@ -28,10 +28,10 @@ export const MapControlsOverlay: React.FC<MapControlsOverlayProps> = ({
       <button
         onClick={onZoomOut}
         aria-label="Zoom out"
-        className="w-7 h-7 rounded hover:bg-white/10 text-slate-300 hover:text-white flex items-center justify-center transition-colors text-xs font-mono"
+        className="w-6 h-6 rounded hover:bg-white/10 text-slate-300 hover:text-white flex items-center justify-center transition-colors text-xs"
         title="Zoom out (-)"
       >
-        <Minus className="w-3.5 h-3.5" />
+        <Minus className="w-3 h-3" />
       </button>
 
       <div className="w-full h-px bg-white/10" />
@@ -39,10 +39,10 @@ export const MapControlsOverlay: React.FC<MapControlsOverlayProps> = ({
       <button
         onClick={onRecenter}
         aria-label="Recenter on selected station"
-        className="w-7 h-7 rounded hover:bg-white/10 text-slate-300 hover:text-white flex items-center justify-center transition-colors text-xs font-mono"
-        title="Recenter on active location"
+        className="w-6 h-6 rounded hover:bg-white/10 text-slate-300 hover:text-white flex items-center justify-center transition-colors text-xs"
+        title="Recenter location"
       >
-        <Crosshair className="w-3.5 h-3.5" />
+        <Compass className="w-3 h-3" />
       </button>
     </div>
   );

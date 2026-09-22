@@ -56,3 +56,14 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #2E3445;
 }
+
+/* Meteorological Basemap Tone Mapping - Deep Charcoal/Black with High Data Contrast */
+.leaflet-tile-pane {
+  filter: brightness(0.80) contrast(1.22) saturate(0.80);
+}
+
+.leaflet-container {
+  background: #08090C !important;
+  font-family: inherit;
+}
+

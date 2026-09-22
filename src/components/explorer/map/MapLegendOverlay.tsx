@@ -14,42 +14,43 @@ export const MapLegendOverlay: React.FC<MapLegendOverlayProps> = ({
   leadTimeHours,
 }) => {
   return (
-    <div className="absolute bottom-4 left-4 z-20 p-3 rounded bg-[#08090C]/85 border border-white/10 backdrop-blur-md text-slate-300 font-mono shadow-2xl pointer-events-none max-w-xs">
+    <div className="absolute bottom-3 left-3 z-20 p-2.5 rounded bg-[#08090C]/90 border border-white/15 backdrop-blur-md text-slate-300 font-mono shadow-2xl pointer-events-none max-w-xs">
       {displayMode === 'DISAGREEMENT' ? (
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-[9px] uppercase tracking-wider text-slate-400">
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-[8px] uppercase tracking-wider text-slate-400">
             <span>MODEL DISAGREEMENT (σ)</span>
-            <span className="text-white font-sans">Lead +{leadTimeHours}h</span>
+            <span className="text-white">+{leadTimeHours}h</span>
           </div>
-          <div className="w-52 h-2 rounded-sm bg-gradient-to-r from-slate-700 via-sky-400 via-amber-400 to-rose-600" />
-          <div className="flex justify-between text-[9px] text-slate-400">
+          <div className="w-48 h-1.5 rounded-sm bg-gradient-to-r from-[#0F172A] via-[#0E7490] via-[#38BDF8] via-[#FB923C] to-[#F43F5E]" />
+          <div className="flex justify-between text-[8px] text-slate-400">
             <span>0.2 (Consensus)</span>
             <span>1.5</span>
-            <span>3.0+ (Severe Divergence)</span>
+            <span>3.0+ (Divergence)</span>
           </div>
         </div>
       ) : selectedVariable === 'temperature_2m' ? (
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-[9px] uppercase tracking-wider text-slate-400">
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-[8px] uppercase tracking-wider text-slate-400">
             <span>TEMPERATURE FIELD (°C)</span>
-            <span className="text-white font-sans">+{leadTimeHours}h</span>
+            <span className="text-white">+{leadTimeHours}h</span>
           </div>
-          <div className="w-52 h-2 rounded-sm bg-gradient-to-r from-[#1E1B4B] via-[#06B6D4] via-[#10B981] via-[#F59E0B] via-[#F97316] to-[#EF4444]" />
-          <div className="flex justify-between text-[9px] text-slate-400">
-            <span>-15°C (Cold)</span>
-            <span>10°C</span>
-            <span>25°C</span>
-            <span>42°C+ (Warm)</span>
+          <div className="w-48 h-1.5 rounded-sm bg-gradient-to-r from-[#0F172A] via-[#0E7490] via-[#06B6D4] via-[#38BDF8] via-[#BAE6FD] to-[#FB923C]" />
+          <div className="flex justify-between text-[8px] text-slate-400">
+            <span>-15°C</span>
+            <span>0°C</span>
+            <span>15°C</span>
+            <span>28°C</span>
+            <span>42°C</span>
           </div>
         </div>
       ) : selectedVariable === 'precipitation' ? (
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-[9px] uppercase tracking-wider text-slate-400">
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-[8px] uppercase tracking-wider text-slate-400">
             <span>PRECIPITATION INTENSITY (mm)</span>
-            <span className="text-white font-sans">+{leadTimeHours}h</span>
+            <span className="text-white">+{leadTimeHours}h</span>
           </div>
-          <div className="w-52 h-2 rounded-sm bg-gradient-to-r from-white/10 via-sky-400 via-blue-600 via-indigo-600 to-purple-600" />
-          <div className="flex justify-between text-[9px] text-slate-400">
+          <div className="w-48 h-1.5 rounded-sm bg-gradient-to-r from-transparent via-[#38BDF8] via-[#0EA5E9] via-[#0284C7] to-[#0369A1]" />
+          <div className="flex justify-between text-[8px] text-slate-400">
             <span>0 mm</span>
             <span>2.5 mm</span>
             <span>10 mm</span>
@@ -58,13 +59,13 @@ export const MapLegendOverlay: React.FC<MapLegendOverlayProps> = ({
           </div>
         </div>
       ) : selectedVariable === 'wind_speed_10m' ? (
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-[9px] uppercase tracking-wider text-slate-400">
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-[8px] uppercase tracking-wider text-slate-400">
             <span>WIND STREAMLINES (m/s)</span>
-            <span className="text-white font-sans">Vector Flow</span>
+            <span className="text-white">Vector Field</span>
           </div>
-          <div className="w-52 h-2 rounded-sm bg-gradient-to-r from-slate-400 via-sky-400 via-amber-400 to-rose-600" />
-          <div className="flex justify-between text-[9px] text-slate-400">
+          <div className="w-48 h-1.5 rounded-sm bg-gradient-to-r from-slate-400 via-[#06B6D4] via-[#38BDF8] to-white" />
+          <div className="flex justify-between text-[8px] text-slate-400">
             <span>0 (Calm)</span>
             <span>5 (Breeze)</span>
             <span>12 (Gale)</span>
@@ -72,13 +73,13 @@ export const MapLegendOverlay: React.FC<MapLegendOverlayProps> = ({
           </div>
         </div>
       ) : selectedVariable === 'relative_humidity_2m' ? (
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-[9px] uppercase tracking-wider text-slate-400">
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-[8px] uppercase tracking-wider text-slate-400">
             <span>RELATIVE HUMIDITY (%)</span>
-            <span className="text-white font-sans">Vapor Field</span>
+            <span className="text-white">Vapor Plume</span>
           </div>
-          <div className="w-52 h-2 rounded-sm bg-gradient-to-r from-amber-700/60 via-sky-500/60 via-teal-500/70 to-emerald-500" />
-          <div className="flex justify-between text-[9px] text-slate-400">
+          <div className="w-48 h-1.5 rounded-sm bg-gradient-to-r from-[#0F172A] via-[#0E7490] via-[#06B6D4] to-[#38BDF8]" />
+          <div className="flex justify-between text-[8px] text-slate-400">
             <span>20% (Dry)</span>
             <span>50%</span>
             <span>75%</span>
@@ -86,13 +87,13 @@ export const MapLegendOverlay: React.FC<MapLegendOverlayProps> = ({
           </div>
         </div>
       ) : (
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-[9px] uppercase tracking-wider text-slate-400">
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-[8px] uppercase tracking-wider text-slate-400">
             <span>SURFACE PRESSURE (hPa)</span>
-            <span className="text-white font-sans">4 hPa Isobars</span>
+            <span className="text-white">4 hPa Isobars</span>
           </div>
-          <div className="w-52 h-2 rounded-sm bg-gradient-to-r from-amber-500 via-slate-400 to-sky-400" />
-          <div className="flex justify-between text-[9px] text-slate-400">
+          <div className="w-48 h-1.5 rounded-sm bg-gradient-to-r from-slate-600 via-[#38BDF8] to-white" />
+          <div className="flex justify-between text-[8px] text-slate-400">
             <span>996 (Low)</span>
             <span>1012 (Standard)</span>
             <span>1028 (High)</span>

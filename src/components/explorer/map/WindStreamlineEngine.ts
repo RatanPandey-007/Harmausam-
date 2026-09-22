@@ -153,20 +153,20 @@ export class WindStreamlineEngine {
         continue;
       }
 
-      // Draw streamline segment
+      // Draw streamline segment in restrained blue/cyan operations palette
       const speed = vector.speed;
-      let strokeColor = 'rgba(148, 163, 184, 0.45)'; // Light breeze
-      let lineWidth = 1.0;
+      let strokeColor = 'rgba(148, 163, 184, 0.35)'; // Light flow
+      let lineWidth = 0.8;
 
       if (speed >= 14) {
-        strokeColor = 'rgba(239, 68, 68, 0.90)'; // Gale force
-        lineWidth = 2.0;
+        strokeColor = 'rgba(255, 255, 255, 0.90)'; // Gale force crisp white
+        lineWidth = 1.8;
       } else if (speed >= 9) {
-        strokeColor = 'rgba(245, 158, 11, 0.80)'; // Moderate breeze
-        lineWidth = 1.6;
+        strokeColor = 'rgba(56, 189, 248, 0.85)'; // Moderate sky cyan
+        lineWidth = 1.4;
       } else if (speed >= 4) {
-        strokeColor = 'rgba(56, 189, 248, 0.70)'; // Gentle flow
-        lineWidth = 1.2;
+        strokeColor = 'rgba(6, 182, 212, 0.60)'; // Gentle flow cyan
+        lineWidth = 1.0;
       }
 
       this.ctx.beginPath();
