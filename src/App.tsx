@@ -158,8 +158,12 @@ export const App: React.FC = () => {
             {activeTab === 'blending' && (
               <BlendingWorkbench
                 currentResult={pipelineData.blendedResult}
+                timeSeriesTrajectory={pipelineData.timeSeriesTrajectory}
+                station={selectedStation}
                 selectedVariable={selectedVariable}
                 leadTimeHours={leadTimeHours}
+                onNavigate={(tab) => setActiveTab(tab)}
+                isDemonstrationData={pipelineData.isDemonstrationData}
               />
             )}
 
