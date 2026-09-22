@@ -221,12 +221,27 @@ export interface CategoricalMetrics {
   brierScore: number;
 }
 
+export interface VerifiedDataPoint {
+  timestamp: string;
+  leadTimeHours: number;
+  regime: WeatherRegime;
+  observation: number;
+  ecmwf: number;
+  gfs: number;
+  icon: number;
+  graphcast: number;
+  equalWeight: number;
+  fixedWeight: number;
+  adaptiveBlend: number;
+}
+
 /** Comparative Verification Leaderboard */
 export interface VerificationComparison {
   variable: WeatherVariable;
   evaluationWindow: string;
   splitMethod: string; // 'Strict Chronological (Time-Aware)'
   sampleSize: number;
+  dataPoints?: VerifiedDataPoint[];
   models: {
     name: string;
     id: string;

@@ -172,6 +172,11 @@ export const App: React.FC = () => {
               <VerificationLab
                 verification={pipelineData.verification}
                 selectedVariable={selectedVariable}
+                setSelectedVariable={setSelectedVariable}
+                station={selectedStation}
+                setSelectedStation={setSelectedStation}
+                isDemonstrationData={pipelineData.isDemonstrationData}
+                onNavigate={(tab) => setActiveTab(tab)}
               />
             )}
 

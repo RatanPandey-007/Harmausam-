@@ -228,6 +228,7 @@ export class VerificationEngine {
       evaluationWindow: 'Strict Out-of-Sample Verification (Test Split)',
       splitMethod: 'Chronological Block (zero temporal lookahead leakage)',
       sampleSize: n,
+      dataPoints: data,
       models: [
         {
           name: 'Adaptive Context Blend',
