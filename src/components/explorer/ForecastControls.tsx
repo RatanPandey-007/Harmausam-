@@ -19,7 +19,7 @@ import {
 } from '../../core/types';
 import { GLOBAL_STATIONS } from '../../core/data/stations';
 
-export type ExplorerDisplayMode = 'SINGLE' | 'COMPARISON' | 'BLENDED';
+export type ExplorerDisplayMode = 'SINGLE' | 'COMPARISON' | 'BLENDED' | 'DISAGREEMENT';
 
 interface ForecastControlsProps {
   station: StationLocation;
@@ -129,8 +129,8 @@ export const ForecastControls: React.FC<ForecastControlsProps> = ({
           })}
         </div>
 
-        {/* Display Mode Selector (Single / Comparison / Blended) */}
-        <div className="flex items-center space-x-1 border border-white/10 bg-[#0E1015] p-1 rounded">
+        {/* Display Mode Selector (Blended / Comparison / Single / Disagreement) */}
+        <div className="flex flex-wrap items-center gap-1 border border-white/10 bg-[#0E1015] p-1 rounded">
           <button
             onClick={() => setDisplayMode('BLENDED')}
             className={`px-3 py-1 rounded text-xs font-sans transition-colors ${
@@ -163,14 +163,27 @@ export const ForecastControls: React.FC<ForecastControlsProps> = ({
           >
             Single Source
           </button>
+
+          <button
+            onClick={() => setDisplayMode('DISAGREEMENT')}
+            className={`px-3 py-1 rounded text-xs font-sans transition-colors ${
+              displayMode === 'DISAGREEMENT' 
+                ? 'bg-rose-500 text-white font-bold' 
+                : 'text-slate-400 hover:text-rose-300'
+            }`}
+          >
+            Model Disagreement (σ)
+          </button>
         </div>
 
       </div>
 
-      {/* Sub-bar for Single Source Mode Picker */}
-      {displayMode === 'SINGLE' && (
+      {/* Sub-bar for Single / Comparison Source Focus Picker */}
+      {(displayMode === 'SINGLE' || displayMode === 'COMPARISON') && (
         <div className="flex items-center space-x-2 pt-2 text-xs font-mono text-slate-400 animate-fade-in">
-          <span className="text-[10px] uppercase tracking-wider">ACTIVE SYSTEM:</span>
+          <span className="text-[10px] uppercase tracking-wider">
+            {displayMode === 'SINGLE' ? 'ACTIVE SYSTEM:' : 'INSPECT ON MAP:'}
+          </span>
           {sources.map((s) => (
             <button
               key={s.id}
