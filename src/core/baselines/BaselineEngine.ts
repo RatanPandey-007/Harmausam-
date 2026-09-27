@@ -37,44 +37,32 @@ export const HISTORICAL_FIXED_WEIGHTS: Record<WeatherVariable, Record<ForecastSo
   }
 };
 
+import { EqualWeightEngine } from '../../lib/weather/blending/equalWeight';
+import { FixedWeightEngine } from '../../lib/weather/blending/fixedWeight';
+
 export class BaselineEngine {
   /**
-   * Compute Equal-Weight Multi-Model Ensemble Average: F_EM = (1/M) * sum(F_i)
+   * Compute Equal-Weight Multi-Model Ensemble Average: F_EM = (1/M_valid) * sum(F_i)
+   * Only includes valid sources; missing is never 0; renormalizes to 1.0.
    */
-  public static computeEqualWeight(forecasts: Record<ForecastSourceId, number>): number {
-    const values = Object.values(forecasts);
-    if (values.length === 0) return 0;
-    const sum = values.reduce((acc, v) => acc + v, 0);
-    return Number((sum / values.length).toFixed(2));
+  public static computeEqualWeight(forecasts: Record<ForecastSourceId, number | null | undefined>): number {
+    const res = EqualWeightEngine.compute(forecasts);
+    return res.value ?? 0;
   }
 
   /**
    * Compute Fixed-Weight Historical Blend: F_Fixed = sum(w_i * F_i)
+   * Constrained optimization over historical calibration splits; dynamically renormalizes.
    */
   public static computeFixedWeight(
-    forecasts: Record<ForecastSourceId, number>,
+    forecasts: Record<ForecastSourceId, number | null | undefined>,
     variable: WeatherVariable
   ): { value: number; weights: Record<ForecastSourceId, number> } {
-    const weights = HISTORICAL_FIXED_WEIGHTS[variable] || {
-      ECMWF: 0.25,
-      GFS: 0.25,
-      ICON: 0.25,
-      GRAPHCAST: 0.25
-    };
-
-    let blended = 0;
-    let weightSum = 0;
-
-    for (const [source, val] of Object.entries(forecasts) as [ForecastSourceId, number][]) {
-      const w = weights[source] ?? 0.25;
-      blended += val * w;
-      weightSum += w;
-    }
-
-    const finalVal = weightSum > 0 ? blended / weightSum : 0;
+    const res = FixedWeightEngine.compute(forecasts, variable);
     return {
-      value: Number(finalVal.toFixed(2)),
-      weights
+      value: res.value ?? 0,
+      weights: res.result.weights,
     };
   }
 }
+

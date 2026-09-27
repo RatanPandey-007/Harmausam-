@@ -17,7 +17,8 @@ export type ActiveTab =
   | 'verification' 
   | 'events' 
   | 'explain' 
-  | 'health';
+  | 'health'
+  | 'methodology';
 
 interface NavbarProps {
   activeTab: ActiveTab;
@@ -27,7 +28,7 @@ interface NavbarProps {
   useLiveData: boolean;
   setUseLiveData: (val: boolean) => void;
   isDemonstrationData: boolean;
-  onOpenMethodology: () => void;
+  onOpenMethodology?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -37,8 +38,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   setSelectedStation,
   useLiveData,
   setUseLiveData,
-  isDemonstrationData,
-  onOpenMethodology,
+  isDemonstrationData: _isDemonstrationData,
+  onOpenMethodology: _onOpenMethodology,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -49,6 +50,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'verification', label: 'Verification' },
     { id: 'events', label: 'Extreme Events' },
     { id: 'explain', label: 'Diagnostics' },
+    { id: 'methodology', label: 'Methodology' },
   ];
 
   return (
@@ -89,13 +91,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
               );
             })}
-
-            <button
-              onClick={onOpenMethodology}
-              className="text-slate-400 hover:text-slate-200 transition-colors py-1 flex items-center space-x-1"
-            >
-              <span>Methodology</span>
-            </button>
           </nav>
 
           {/* Right Controls: Region Selector + Subtle Mode Indicator */}
@@ -166,15 +161,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               {link.label}
             </button>
           ))}
-          <button
-            onClick={() => {
-              onOpenMethodology();
-              setMobileMenuOpen(false);
-            }}
-            className="block w-full text-left py-2 text-slate-400"
-          >
-            Methodology
-          </button>
 
           <div className="pt-3 hairline-t flex items-center justify-between">
             <select

@@ -315,7 +315,7 @@ export const ExtremeEventMap: React.FC<ExtremeEventMapProps> = ({
   }, [networkStatuses, selectedStation.id, eventType, activeThreshold, unit, drawHazardField, onSelectStation]);
 
   return (
-    <div className="relative w-full h-[420px] rounded-lg border border-white/10 overflow-hidden bg-[#0A0C10]">
+    <div className="extreme-event-map-container relative w-full h-[420px] rounded-lg border border-white/10 overflow-hidden bg-[#0A0C10]">
       {/* Base Map Container */}
       <div ref={mapContainerRef} className="absolute inset-0 w-full h-full z-0" />
 

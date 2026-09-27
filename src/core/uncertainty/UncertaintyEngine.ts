@@ -4,6 +4,8 @@ import {
   WeatherRegime, 
   SourceWeight 
 } from '../types';
+import { DisagreementEngine } from '../../lib/weather/uncertainty/disagreementEngine';
+
 
 export interface UncertaintyEvaluation {
   modelSpread: number; // raw ensemble standard deviation
@@ -102,16 +104,27 @@ export class UncertaintyEngine {
       };
     }
 
-    // 1. Raw Ensemble Spread (Standard Deviation across models)
-    const mean = values.reduce((a, b) => a + b, 0) / n;
-    const variance = values.reduce((acc, v) => acc + Math.pow(v - mean, 2), 0) / (n > 1 ? n - 1 : 1);
-    const rawSpread = Math.sqrt(variance);
+    // 1. Raw Ensemble Spread (Standard Deviation across valid models via DisagreementEngine)
+    const disagreement = DisagreementEngine.compute({
+      forecasts,
+      timestamp: new Date().toISOString(),
+      stationId: 'current',
+      latitude: 0,
+      longitude: 0,
+      variable,
+      leadTimeHours: 24,
+    });
+
+    const rawSpread = disagreement.standardDeviation ?? 0;
+    const nValid = disagreement.validSourceCount;
 
     // 2. Weighted Epistemic Disagreement
     let weightedVarSum = 0;
     for (const [src, val] of Object.entries(forecasts) as [ForecastSourceId, number][]) {
-      const w = weights[src]?.weight ?? (1 / n);
-      weightedVarSum += w * Math.pow(val - blendedValue, 2);
+      if (val !== null && val !== undefined && !isNaN(val) && isFinite(val)) {
+        const w = weights[src]?.weight ?? (1 / Math.max(1, nValid));
+        weightedVarSum += w * Math.pow(val - blendedValue, 2);
+      }
     }
     const weightedSpread = Math.sqrt(weightedVarSum);
 
@@ -121,17 +134,16 @@ export class UncertaintyEngine {
     // 4. Combined Total Predictive Standard Deviation S = sqrt(sigma_epistemic^2 + sigma_aleatoric^2)
     const totalStdDev = Math.sqrt(Math.pow(weightedSpread, 2) + Math.pow(aleatoricNoise, 2));
 
-    // 5. 90% Confidence Interval (Z_0.95 = 1.645)
+    // 5. Empirical Error Bounds (labeled as proxy, not calibrated probability)
     const z90 = 1.645;
     const lower90 = Number((blendedValue - z90 * totalStdDev).toFixed(2));
     const upper90 = Number((blendedValue + z90 * totalStdDev).toFixed(2));
 
-    // 6. Calibrated Confidence Indicator (tied strictly to spread vs climatological typical spread)
+    // 6. Agreement Indicator (tied strictly to spread vs climatological typical spread)
     const typicalSpread = TYPICAL_SPREAD_REFERENCE[variable] || 3.0;
-    // Ratio of observed spread to expected spread
     const spreadRatio = rawSpread / typicalSpread;
 
-    // Confidence decreases linearly with spread ratio and regime complexity
+    // Agreement indicator decreases linearly with spread ratio and regime complexity
     const rawConfidence = Math.max(0.05, Math.min(0.98, 1.0 - (spreadRatio * 0.45) - (aleatoricNoise / (typicalSpread * 2.5))));
     const confidenceIndicator = Math.round(rawConfidence * 100);
 
@@ -146,10 +158,11 @@ export class UncertaintyEngine {
     else if (spreadRatio >= 1.2) disagreementLevel = 'High';
     else if (spreadRatio >= 0.7) disagreementLevel = 'Moderate';
 
-    notes.push(`Raw ensemble spread: σ = ${rawSpread.toFixed(2)} across ${n} models.`);
+    notes.push(`Raw ensemble spread: σ = ${rawSpread.toFixed(2)} across ${nValid} valid models.`);
     notes.push(`Weighted epistemic spread: σ_w = ${weightedSpread.toFixed(2)}.`);
     notes.push(`Aleatoric regime residual for ${regime}: σ_res = ${aleatoricNoise.toFixed(2)}.`);
-    notes.push(`Confidence interval (90%): [${lower90}, ${upper90}] (Z=1.645, total σ=${totalStdDev.toFixed(2)}).`);
+    notes.push(`Uncertainty proxy bounds: [${lower90}, ${upper90}] (empirical proxy, not a calibrated Gaussian interval).`);
+
 
     return {
       modelSpread: Number(rawSpread.toFixed(2)),

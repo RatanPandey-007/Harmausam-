@@ -1,4 +1,4 @@
-import L from 'leaflet';
+import type { Map as MapLibreMap } from 'maplibre-gl';
 import { StationLocation, BlendedForecastResult } from '../../../core/types';
 
 interface Particle {
@@ -14,11 +14,11 @@ interface Particle {
 export class WindStreamlineEngine {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D | null;
-  private map: L.Map;
+  private map: MapLibreMap;
   private particles: Particle[] = [];
   private animationFrameId: number | null = null;
   private isRunning: boolean = false;
-  private numParticles: number = 260;
+  private numParticles: number = 280;
 
   private station: StationLocation;
   private windSpeed: number;
@@ -26,7 +26,7 @@ export class WindStreamlineEngine {
 
   constructor(
     canvas: HTMLCanvasElement,
-    map: L.Map,
+    map: MapLibreMap,
     station: StationLocation,
     currentResult: BlendedForecastResult
   ) {
@@ -74,13 +74,13 @@ export class WindStreamlineEngine {
   }
 
   /**
-   * Computes the meteorological vector (u, v) at screen coordinate (x, y).
-   * Follows real wind flow with synoptic circular pressure curvature.
+   * Computes meteorological vector (u, v) at screen coordinate (x, y)
+   * using MapLibre's unproject method.
    */
   private getVectorAtPoint(x: number, y: number): { u: number; v: number; speed: number } {
-    const latLng = this.map.containerPointToLatLng([x, y]);
-    const dLat = latLng.lat - this.station.latitude;
-    const dLon = latLng.lng - this.station.longitude;
+    const lngLat = this.map.unproject([x, y]);
+    const dLat = lngLat.lat - this.station.latitude;
+    const dLon = lngLat.lng - this.station.longitude;
 
     // Synoptic curvature: Cyclonic flow in northern hemisphere
     const baseRad = (this.windDirectionDeg * Math.PI) / 180;
@@ -90,7 +90,7 @@ export class WindStreamlineEngine {
     // Wind speed varies across pressure gradient
     const speed = Math.max(1.2, this.windSpeed + Math.sin(0.08 * dLon) * 2.2);
 
-    // Coordinate conversion: screen Y is downward
+    // Screen coordinate conversion: screen Y is downward
     const u = Math.sin(angle) * speed;
     const v = -Math.cos(angle) * speed;
 
@@ -120,11 +120,11 @@ export class WindStreamlineEngine {
     const width = this.canvas.width;
     const height = this.canvas.height;
 
-    // Subtle fade trail effect for elegant streamlines
-    this.ctx.fillStyle = 'rgba(8, 9, 12, 0.12)';
+    // Light basemap trail fade effect: clean, subtle dissolution
+    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
     this.ctx.fillRect(0, 0, width, height);
 
-    const stepSpeedScale = 0.35;
+    const stepSpeedScale = 0.36;
 
     for (let i = 0; i < this.particles.length; i++) {
       const p = this.particles[i];
@@ -153,20 +153,20 @@ export class WindStreamlineEngine {
         continue;
       }
 
-      // Draw streamline segment in restrained blue/cyan operations palette
+      // High-contrast streamline colors tailored for LIGHT basemap
       const speed = vector.speed;
-      let strokeColor = 'rgba(148, 163, 184, 0.35)'; // Light flow
-      let lineWidth = 0.8;
+      let strokeColor = 'rgba(100, 116, 139, 0.45)'; // Gentle flow: Slate
+      let lineWidth = 0.9;
 
       if (speed >= 14) {
-        strokeColor = 'rgba(255, 255, 255, 0.90)'; // Gale force crisp white
+        strokeColor = 'rgba(15, 23, 42, 0.95)'; // Gale force: Deep Navy
         lineWidth = 1.8;
       } else if (speed >= 9) {
-        strokeColor = 'rgba(56, 189, 248, 0.85)'; // Moderate sky cyan
+        strokeColor = 'rgba(2, 132, 199, 0.85)'; // Moderate: Deep Azure
         lineWidth = 1.4;
       } else if (speed >= 4) {
-        strokeColor = 'rgba(6, 182, 212, 0.60)'; // Gentle flow cyan
-        lineWidth = 1.0;
+        strokeColor = 'rgba(14, 165, 233, 0.70)'; // Light breeze: Sky blue
+        lineWidth = 1.1;
       }
 
       this.ctx.beginPath();

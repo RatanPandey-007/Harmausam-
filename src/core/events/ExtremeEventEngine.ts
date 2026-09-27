@@ -108,19 +108,19 @@ export interface EventVerificationResult {
   fp: number; // False alarms
   fn: number; // Misses
   tn: number; // Correct rejections
-  precision: number;
-  recall: number; // POD
-  f1: number;
-  csi: number; // Threat score
+  precision: number | null;
+  recall: number | null; // POD
+  f1: number | null;
+  csi: number | null; // Threat score
   byLeadTime: {
     leadTimeHours: number;
     tp: number;
     fp: number;
     fn: number;
     tn: number;
-    precision: number;
-    recall: number;
-    f1: number;
+    precision: number | null;
+    recall: number | null;
+    f1: number | null;
   }[];
   byRegime: {
     regime: WeatherRegime;
@@ -129,9 +129,9 @@ export interface EventVerificationResult {
     fp: number;
     fn: number;
     tn: number;
-    precision: number;
-    recall: number;
-    f1: number;
+    precision: number | null;
+    recall: number | null;
+    f1: number | null;
   }[];
   cases: HistoricalEventCase[];
 }
@@ -501,17 +501,19 @@ Multi-Model Agreement: ${exceedCount}/${sources.length} sources exceed threshold
       if (classification === 'TRUE_NEGATIVE') regimeBuckets[pt.regime].tn++;
     }
 
-    // Calculate core metrics with zero-division safety
-    const precision = (tp + fp) > 0 ? Number((tp / (tp + fp)).toFixed(3)) : 0.0;
-    const recall = (tp + fn) > 0 ? Number((tp / (tp + fn)).toFixed(3)) : 0.0;
-    const f1 = (precision + recall) > 0 ? Number(((2 * precision * recall) / (precision + recall)).toFixed(3)) : 0.0;
-    const csi = (tp + fp + fn) > 0 ? Number((tp / (tp + fp + fn)).toFixed(3)) : 0.0;
+    // Calculate core metrics with zero-division safety (return null when denominator is 0)
+    const precision = (tp + fp) > 0 ? Number((tp / (tp + fp)).toFixed(3)) : null;
+    const recall = (tp + fn) > 0 ? Number((tp / (tp + fn)).toFixed(3)) : null;
+    const f1 = (precision !== null && recall !== null && (precision + recall) > 0)
+      ? Number(((2 * precision * recall) / (precision + recall)).toFixed(3))
+      : null;
+    const csi = (tp + fp + fn) > 0 ? Number((tp / (tp + fp + fn)).toFixed(3)) : null;
 
     const byLeadTime = Object.entries(leadTimeBuckets).map(([ltStr, counts]) => {
       const lt = parseInt(ltStr, 10);
-      const p = (counts.tp + counts.fp) > 0 ? Number((counts.tp / (counts.tp + counts.fp)).toFixed(3)) : 0.0;
-      const r = (counts.tp + counts.fn) > 0 ? Number((counts.tp / (counts.tp + counts.fn)).toFixed(3)) : 0.0;
-      const f = (p + r) > 0 ? Number(((2 * p * r) / (p + r)).toFixed(3)) : 0.0;
+      const p = (counts.tp + counts.fp) > 0 ? Number((counts.tp / (counts.tp + counts.fp)).toFixed(3)) : null;
+      const r = (counts.tp + counts.fn) > 0 ? Number((counts.tp / (counts.tp + counts.fn)).toFixed(3)) : null;
+      const f = (p !== null && r !== null && (p + r) > 0) ? Number(((2 * p * r) / (p + r)).toFixed(3)) : null;
       return {
         leadTimeHours: lt,
         tp: counts.tp,
@@ -526,9 +528,9 @@ Multi-Model Agreement: ${exceedCount}/${sources.length} sources exceed threshold
 
     const byRegime = Object.entries(regimeBuckets).map(([regimeStr, counts]) => {
       const reg = regimeStr as WeatherRegime;
-      const p = (counts.tp + counts.fp) > 0 ? Number((counts.tp / (counts.tp + counts.fp)).toFixed(3)) : 0.0;
-      const r = (counts.tp + counts.fn) > 0 ? Number((counts.tp / (counts.tp + counts.fn)).toFixed(3)) : 0.0;
-      const f = (p + r) > 0 ? Number(((2 * p * r) / (p + r)).toFixed(3)) : 0.0;
+      const p = (counts.tp + counts.fp) > 0 ? Number((counts.tp / (counts.tp + counts.fp)).toFixed(3)) : null;
+      const r = (counts.tp + counts.fn) > 0 ? Number((counts.tp / (counts.tp + counts.fn)).toFixed(3)) : null;
+      const f = (p !== null && r !== null && (p + r) > 0) ? Number(((2 * p * r) / (p + r)).toFixed(3)) : null;
       return {
         regime: reg,
         sampleCount: counts.count,

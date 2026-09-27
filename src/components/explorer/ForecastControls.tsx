@@ -76,28 +76,32 @@ export const ForecastControls: React.FC<ForecastControlsProps> = ({
           </p>
         </div>
 
-        {/* Location Dropdown */}
+        {/* Location Selector (City, Region, Country) */}
         <div className="flex items-center space-x-3">
-          <div className="relative">
+          <div className="relative flex items-center">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+              <MapPin className="w-3.5 h-3.5 text-sky-400" />
+            </div>
             <select
               value={station.id}
               onChange={(e) => {
                 const s = GLOBAL_STATIONS.find(st => st.id === e.target.value);
                 if (s) setStation(s);
               }}
-              className="appearance-none bg-[#0E1015] hover:bg-[#14161F] border border-white/10 text-white text-xs rounded px-3 py-2 pr-8 focus:outline-none focus:border-white/30 cursor-pointer font-mono transition-colors"
+              className="appearance-none bg-[#0E1015] hover:bg-[#14161F] border border-white/10 hover:border-white/20 text-white text-xs rounded-lg pl-9 pr-8 py-2.5 focus:outline-none focus:border-sky-400/50 cursor-pointer font-sans transition-all shadow-sm"
             >
               {GLOBAL_STATIONS.map((st) => (
-                <option key={st.id} value={st.id} className="bg-[#0E1015] text-white">
-                  {st.name} — {st.country}
+                <option key={st.id} value={st.id} className="bg-[#0E1015] text-white py-1">
+                  {st.name} — {st.region} · {st.country}
                 </option>
               ))}
             </select>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
-          <div className="hidden sm:block text-xs font-mono text-slate-400 px-2 py-1.5 rounded border border-white/5 bg-white/5">
-            {station.latitude.toFixed(2)}°N, {station.longitude.toFixed(2)}°E
+          <div className="hidden sm:flex flex-col text-right font-mono text-[10px] text-slate-400 px-3 py-1.5 rounded-lg border border-white/5 bg-white/5">
+            <span className="text-white font-medium">{station.latitude.toFixed(2)}°N, {station.longitude.toFixed(2)}°E</span>
+            <span className="text-[9px] text-slate-500">{station.elevationMeters}m MSL · WMO</span>
           </div>
         </div>
       </div>

@@ -1,234 +1,123 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
-  RotateCcw, 
-  Compass, 
-  Info,
-  CheckCircle2,
-  ArrowRight
-} from 'lucide-react';
-import { 
+  StationLocation, 
+  WeatherVariable, 
+  BlendedForecastResult, 
   ExplanationBreakdown, 
-  WeatherRegime, 
-  ForecastSourceId, 
-  WeatherContext,
-  SourceWeight,
-  WeatherVariable
+  VerificationComparison, 
+  ProviderHealthStatus 
 } from '../../core/types';
-import { ExplainabilityEngine } from '../../core/explainability/ExplainabilityEngine';
+import { ActiveTab } from '../layout/Navbar';
+import { DiagnosticHeader } from './DiagnosticHeader';
+import { DiagnosticSummary } from './DiagnosticSummary';
+import { DiagnosticFlowPipeline } from './DiagnosticFlowPipeline';
+import { WhyTheseWeights } from './WhyTheseWeights';
+import { ContextFactors } from './ContextFactors';
+import { ModelDisagreementPanel } from './ModelDisagreementPanel';
+import { CausalExplainabilityTimeline } from './CausalExplainabilityTimeline';
+import { ReliabilityTrendChart } from './ReliabilityTrendChart';
+import { DriftAndQualityMonitor } from './DriftAndQualityMonitor';
+import { CrossSectionNavigation } from './CrossSectionNavigation';
 
-interface ExplainabilityStudioProps {
+export interface ExplainabilityStudioProps {
+  currentResult: BlendedForecastResult;
+  timeSeriesTrajectory?: BlendedForecastResult[];
+  verification?: VerificationComparison;
+  providerHealth?: ProviderHealthStatus[];
   explanation: ExplanationBreakdown;
-  context: WeatherContext;
-  weights: Record<ForecastSourceId, SourceWeight>;
-  individualForecasts: Record<ForecastSourceId, number>;
+  station: StationLocation;
+  setStation: (station: StationLocation) => void;
   selectedVariable: WeatherVariable;
+  setSelectedVariable: (v: WeatherVariable) => void;
   leadTimeHours: number;
+  setLeadTimeHours: (h: number) => void;
+  isDemonstrationData: boolean;
+  onNavigate?: (tab: ActiveTab) => void;
 }
 
 export const ExplainabilityStudio: React.FC<ExplainabilityStudioProps> = ({
+  currentResult,
+  verification,
+  providerHealth,
   explanation,
-  context,
-  weights,
-  individualForecasts,
+  station,
+  setStation,
   selectedVariable,
+  setSelectedVariable,
   leadTimeHours,
+  setLeadTimeHours,
+  isDemonstrationData,
+  onNavigate,
 }) => {
-  const [counterfactualRegime, setCounterfactualRegime] = useState<WeatherRegime | null>(null);
-
-  const sources: ForecastSourceId[] = ['ECMWF', 'GFS', 'ICON', 'GRAPHCAST'];
-  const regimes: WeatherRegime[] = [
-    'Normal', 
-    'Heavy Rainfall', 
-    'Convective / Rapid Change', 
-    'Heatwave', 
-    'High Wind'
-  ];
-
-  const activeExplanation = counterfactualRegime 
-    ? ExplainabilityEngine.explainWeights(context, weights, individualForecasts, counterfactualRegime)
-    : explanation;
-
   return (
-    <div className="space-y-12 py-4">
+    <div className="space-y-10 py-2 select-none">
       
-      {/* 1. Diagnostic Headline */}
-      <div className="space-y-2 hairline-b pb-8">
-        <div className="text-xs font-mono text-slate-400 uppercase tracking-widest">
-          DECISION DIAGNOSTICS
-        </div>
-        <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-white font-sans">
-          Why did Harmausam trust this forecast?
-        </h2>
-        <p className="text-sm text-slate-400 font-sans max-w-2xl leading-relaxed">
-          Transparent decomposition of Bayesian loss factors: regional regime skill, lead time degradation, and inter-model consensus divergence.
-        </p>
-      </div>
+      {/* 1. Page Header & Operational Status (Section 3) */}
+      <DiagnosticHeader
+        isDemonstrationData={isDemonstrationData}
+      />
 
-      {/* 2. Context & Parameter Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 font-mono text-xs">
-        <div className="p-3 rounded border border-white/10 bg-[#0D0F15] space-y-1">
-          <span className="text-[10px] text-slate-400 uppercase">STATION ZONE</span>
-          <div className="text-white font-bold">{context.stationId}</div>
-        </div>
+      {/* 2. Diagnostic Summary & Operational Filter Toolbar (Section 4 & 16) */}
+      <DiagnosticSummary
+        station={station}
+        setStation={setStation}
+        selectedVariable={selectedVariable}
+        setSelectedVariable={setSelectedVariable}
+        leadTimeHours={leadTimeHours}
+        setLeadTimeHours={setLeadTimeHours}
+        currentResult={currentResult}
+      />
 
-        <div className="p-3 rounded border border-white/10 bg-[#0D0F15] space-y-1">
-          <span className="text-[10px] text-slate-400 uppercase">FORECAST LEAD</span>
-          <div className="text-white font-bold">+{leadTimeHours} Hours</div>
-        </div>
+      {/* 3. Diagnostic Flow Pipeline (Section 15) */}
+      <DiagnosticFlowPipeline />
 
-        <div className="p-3 rounded border border-white/10 bg-[#0D0F15] space-y-1">
-          <span className="text-[10px] text-slate-400 uppercase">WEATHER REGIME</span>
-          <div className="text-white font-bold">{context.detectedRegime}</div>
-        </div>
+      {/* 4. "Why These Weights?" Section (Section 5 & 6) */}
+      <WhyTheseWeights
+        weights={currentResult.adaptiveWeights}
+        context={currentResult.context}
+        selectedVariable={selectedVariable}
+        isDemonstrationData={isDemonstrationData}
+      />
 
-        <div className="p-3 rounded border border-white/10 bg-[#0D0F15] space-y-1">
-          <span className="text-[10px] text-slate-400 uppercase">DISAGREEMENT</span>
-          <div className="text-white font-bold">σ = {context.modelDisagreementSpread}</div>
-        </div>
+      {/* 5. Context Used By The Blender (Section 7) */}
+      <ContextFactors
+        station={station}
+        context={currentResult.context}
+      />
 
-        <div className="p-3 rounded border border-white/10 bg-[#0D0F15] space-y-1">
-          <span className="text-[10px] text-slate-400 uppercase">PRIMARY MODEL</span>
-          <div className="text-white font-bold">
-            {sources.reduce((a, b) => (weights[a].weight > weights[b].weight ? a : b))}
-          </div>
-        </div>
-      </div>
+      {/* 6. Model Disagreement & Forecast Uncertainty Panels (Section 8 & 9) */}
+      <ModelDisagreementPanel
+        currentResult={currentResult}
+        selectedVariable={selectedVariable}
+        isDemonstrationData={isDemonstrationData}
+      />
 
-      {/* 3. Structured Reasoning Trace */}
-      <div className="p-6 rounded border border-white/10 bg-[#0D0F15] space-y-4">
-        <div>
-          <h3 className="text-base font-semibold text-white font-sans">
-            Diagnostic Attribution Trace
-          </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Derived directly from mathematical error calculations and consensus divergence
-          </p>
-        </div>
+      {/* 7. "What Changed The Forecast?" Causal Sequence & Counterfactual Simulator (Section 14) */}
+      <CausalExplainabilityTimeline
+        context={currentResult.context}
+        weights={currentResult.adaptiveWeights}
+        individualForecasts={currentResult.individualForecasts}
+        explanation={explanation}
+        isDemonstrationData={isDemonstrationData}
+      />
 
-        <div className="space-y-3 font-mono text-xs">
-          {activeExplanation.naturalLanguageSummary.map((item, idx) => (
-            <div key={idx} className="p-3.5 rounded bg-white/5 flex items-start space-x-3 text-slate-300 leading-relaxed">
-              <span className="text-slate-400 font-bold">{idx + 1}.</span>
-              <span>{item}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* 8. Source Reliability Over Time Line Chart (Section 10) */}
+      <ReliabilityTrendChart
+        selectedVariable={selectedVariable}
+        verification={verification}
+        isDemonstrationData={isDemonstrationData}
+      />
 
-      {/* 4. Weight Breakdown Cards */}
-      <div className="space-y-4">
-        <h3 className="text-base font-semibold text-white font-sans">
-          Final System Weight Assignments
-        </h3>
+      {/* 9. Forecast Drift, Data Quality & Source Health Monitors (Section 11, 12, 13) */}
+      <DriftAndQualityMonitor
+        providerHealth={providerHealth}
+        isDemonstrationData={isDemonstrationData}
+      />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {sources.map((src) => {
-            const sw = weights[src];
-            const raw = individualForecasts[src];
-            const pct = Math.round(sw.weight * 100);
-
-            return (
-              <div key={src} className="p-5 rounded border border-white/10 bg-[#0D0F15] space-y-3">
-                <div className="flex justify-between items-center font-mono text-xs">
-                  <span className="text-white font-bold">{src}</span>
-                  <span className="text-white font-semibold">{pct}%</span>
-                </div>
-
-                <div className="text-xs font-mono text-slate-400 space-y-1">
-                  <div className="flex justify-between">
-                    <span>Raw Output:</span>
-                    <span className="text-slate-200">{raw.toFixed(1)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Regime RMSE:</span>
-                    <span className="text-slate-200">{sw.historicalRmseInRegime.toFixed(2)}</span>
-                  </div>
-                </div>
-
-                <div className="hairline-t pt-2 text-[11px] font-mono text-slate-400 space-y-0.5">
-                  {sw.supportingFactors.map((f, i) => (
-                    <div key={i} className="truncate">• {f}</div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 5. Counterfactual Regime Simulator */}
-      <div className="p-6 rounded border border-white/10 bg-[#0D0F15] space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h3 className="text-base font-semibold text-white font-sans">
-              Counterfactual Regime Simulator
-            </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Simulate how weights and final forecasts would reconfigure under a different atmospheric regime
-            </p>
-          </div>
-
-          {counterfactualRegime && (
-            <button
-              onClick={() => setCounterfactualRegime(null)}
-              className="inline-flex items-center space-x-1.5 text-xs font-mono text-white border border-white/20 px-3 py-1.5 rounded hover:bg-white/10 transition-colors"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset to Observed</span>
-            </button>
-          )}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {regimes.map((r) => {
-            const isSelected = counterfactualRegime === r;
-            const isActual = context.detectedRegime === r;
-
-            return (
-              <button
-                key={r}
-                onClick={() => setCounterfactualRegime(r === counterfactualRegime ? null : r)}
-                className={`px-3 py-1.5 text-xs font-mono rounded transition-colors ${
-                  isSelected 
-                    ? 'bg-white text-black font-bold' 
-                    : isActual 
-                    ? 'border border-white text-white' 
-                    : 'bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white'
-                }`}
-              >
-                <span>{r}</span>
-                {isActual && <span className="ml-1 text-[10px] opacity-75">(Observed)</span>}
-              </button>
-            );
-          })}
-        </div>
-
-        {activeExplanation.counterfactualComparison && (
-          <div className="p-4 rounded bg-white/5 border border-white/10 space-y-3 font-mono text-xs">
-            <div className="flex justify-between items-center text-white pb-2 hairline-b">
-              <span>Shift: {activeExplanation.counterfactualComparison.originalRegime} ➔ {activeExplanation.counterfactualComparison.counterfactualRegime}</span>
-              <span>
-                Forecast Shift: <strong>{activeExplanation.counterfactualComparison.forecastShift.before.toFixed(2)}</strong> ➔ <strong>{activeExplanation.counterfactualComparison.forecastShift.after.toFixed(2)}</strong> ({activeExplanation.counterfactualComparison.forecastShift.delta > 0 ? `+${activeExplanation.counterfactualComparison.forecastShift.delta.toFixed(2)}` : activeExplanation.counterfactualComparison.forecastShift.delta.toFixed(2)})
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-              {sources.map((src) => {
-                const shift = activeExplanation.counterfactualComparison!.weightShifts[src];
-                const isGain = shift.delta > 0;
-                return (
-                  <div key={src} className="p-2 rounded bg-black/40">
-                    <div className="text-white font-bold">{src}</div>
-                    <div className="text-slate-400 mt-1">
-                      {Math.round(shift.before * 100)}% ➔ <strong className="text-white">{Math.round(shift.after * 100)}%</strong>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
+      {/* 10. Cross-Section Operational Navigation (Section 17) */}
+      <CrossSectionNavigation
+        onNavigate={onNavigate}
+      />
 
     </div>
   );

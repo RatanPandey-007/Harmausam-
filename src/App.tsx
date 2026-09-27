@@ -12,6 +12,7 @@ import { ExtremeEventMonitor } from './components/events/ExtremeEventMonitor';
 import { ExplainabilityStudio } from './components/explainability/ExplainabilityStudio';
 import { SystemHealth } from './components/health/SystemHealth';
 import { MethodologyModal } from './components/methodology/MethodologyModal';
+import { MethodologySection } from './components/methodology/MethodologySection';
 
 import { 
   WeatherVariable, 
@@ -32,7 +33,8 @@ export const App: React.FC = () => {
   const [selectedStation, setSelectedStation] = useState<StationLocation>(GLOBAL_STATIONS[0]); // New Delhi
   const [selectedVariable, setSelectedVariable] = useState<WeatherVariable>('temperature_2m');
   const [leadTimeHours, setLeadTimeHours] = useState<number>(24);
-  const [useLiveData, setUseLiveData] = useState<boolean>(false);
+  const defaultUseLive = typeof import.meta !== 'undefined' && import.meta.env?.VITE_WEATHER_PROVIDER !== 'mock';
+  const [useLiveData, setUseLiveData] = useState<boolean>(defaultUseLive);
   
   // Pipeline Results & Telemetry
   const [pipelineData, setPipelineData] = useState<PipelineExecutionResult | null>(null);
@@ -89,14 +91,14 @@ export const App: React.FC = () => {
         useLiveData={useLiveData}
         setUseLiveData={setUseLiveData}
         isDemonstrationData={pipelineData?.isDemonstrationData ?? true}
-        onOpenMethodology={() => setIsMethodologyOpen(true)}
+        onOpenMethodology={() => setActiveTab('methodology')}
       />
 
       {/* Full-Viewport Editorial Hero (Shown on Overview tab) */}
       {activeTab === 'overview' && (
         <Hero
           onNavigate={(tab) => setActiveTab(tab)}
-          onOpenMethodology={() => setIsMethodologyOpen(true)}
+          onOpenMethodology={() => setActiveTab('methodology')}
         />
       )}
 
@@ -194,15 +196,22 @@ export const App: React.FC = () => {
               />
             )}
 
-            {/* SECTION F: EXPLAINABILITY STUDIO */}
+            {/* SECTION F: SCIENTIFIC DIAGNOSTICS & EXPLAINABILITY */}
             {activeTab === 'explain' && (
               <ExplainabilityStudio
+                currentResult={pipelineData.blendedResult}
+                timeSeriesTrajectory={pipelineData.timeSeriesTrajectory}
+                verification={pipelineData.verification}
+                providerHealth={pipelineData.providerHealth}
                 explanation={pipelineData.explanation}
-                context={pipelineData.blendedResult.context}
-                weights={pipelineData.blendedResult.adaptiveWeights}
-                individualForecasts={pipelineData.blendedResult.individualForecasts}
+                station={selectedStation}
+                setStation={setSelectedStation}
                 selectedVariable={selectedVariable}
+                setSelectedVariable={setSelectedVariable}
                 leadTimeHours={leadTimeHours}
+                setLeadTimeHours={setLeadTimeHours}
+                isDemonstrationData={pipelineData.isDemonstrationData}
+                onNavigate={(tab) => setActiveTab(tab)}
               />
             )}
 
@@ -215,6 +224,17 @@ export const App: React.FC = () => {
                   setLeadTimeHours(prev => prev);
                 }}
                 isLoading={isLoading}
+              />
+            )}
+
+            {/* SECTION H: SCIENTIFIC METHODOLOGY */}
+            {activeTab === 'methodology' && (
+              <MethodologySection
+                station={selectedStation}
+                selectedVariable={selectedVariable}
+                currentResult={pipelineData.blendedResult}
+                isDemonstrationData={pipelineData.isDemonstrationData}
+                onNavigate={(tab) => setActiveTab(tab)}
               />
             )}
           </div>
@@ -234,7 +254,7 @@ export const App: React.FC = () => {
           <div className="flex flex-wrap items-center justify-center gap-6 text-[11px]">
             <span>MODELS: ECMWF IFS • GFS • ICON • GRAPHCAST</span>
             <button 
-              onClick={() => setIsMethodologyOpen(true)}
+              onClick={() => setActiveTab('methodology')}
               className="text-slate-300 hover:text-white transition-colors underline underline-offset-4"
             >
               Scientific Protocol

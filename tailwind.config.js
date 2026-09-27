@@ -8,6 +8,7 @@ export default {
   theme: {
     extend: {
       colors: {
+        primary: '#E1E0CC',
         background: '#08090C',
         surface: {
           DEFAULT: '#0E1015',

@@ -468,13 +468,18 @@ export const BlendingWorkbench: React.FC<BlendingWorkbenchProps> = ({
             {/* Explicit Model Agreement Panel */}
             <div className="p-5 rounded border border-white/10 bg-[#08090C] space-y-3 font-mono text-xs">
               <div className="text-[10px] uppercase tracking-widest text-slate-400 flex justify-between">
-                <span>MODEL AGREEMENT</span>
+                <span>MODEL DISAGREEMENT</span>
                 <span className="text-white font-bold">{context.disagreementLevel.toUpperCase()} DISAGREEMENT</span>
               </div>
 
               <div className="flex justify-between items-baseline pt-1">
                 <span className="text-slate-400">Sample Spread (σ):</span>
                 <span className="text-xl font-bold text-white font-sans">{modelSpreadVal.toFixed(2)}{unit}</span>
+              </div>
+
+              <div className="flex justify-between items-center text-[11px] text-slate-400 pt-0.5">
+                <span>Spread Range (Max - Min):</span>
+                <span className="text-white font-semibold">{(maxModelVal - minModelVal).toFixed(2)}{unit}</span>
               </div>
 
               <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
@@ -485,8 +490,12 @@ export const BlendingWorkbench: React.FC<BlendingWorkbenchProps> = ({
               </div>
 
               <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
-                Calculated from the dispersion (sample standard deviation) between available forecast sources at +{selectedLeadTime}h lead time.
+                Calculated from sample standard deviation across {sources.length} active forecast systems at +{selectedLeadTime}h lead time.
               </p>
+
+              <div className="text-[10px] text-slate-500 italic">
+                Uncertainty proxy based on model disagreement / historical error scale (not a calibrated probability).
+              </div>
 
               <div className="pt-2 hairline-t flex justify-between text-[10px] text-slate-400">
                 <span>ECMWF: <strong className="text-white">{individualForecasts.ECMWF.toFixed(1)}</strong></span>
@@ -518,6 +527,11 @@ export const BlendingWorkbench: React.FC<BlendingWorkbenchProps> = ({
                   <p className="text-[11px] text-slate-400 font-sans">
                     Factors evaluated by the weighting engine based on validation benchmarks:
                   </p>
+
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono bg-white/5 px-2.5 py-1.5 rounded">
+                    <span>REGULARIZATION HIERARCHY</span>
+                    <span className="text-emerald-400 font-semibold">LEVEL 1 (EXACT CONTEXT • N=120)</span>
+                  </div>
 
                   <div className="divide-y divide-white/5">
                     {factorBreakdown.map((item) => (
@@ -665,8 +679,8 @@ export const BlendingWorkbench: React.FC<BlendingWorkbenchProps> = ({
                 <span className="text-slate-300 font-semibold">{baselineMethod}</span>
               </div>
               <div className="flex justify-between">
-                <span>Confidence:</span>
-                <span className="text-emerald-400 font-semibold">{currentResult.confidenceIndicator}%</span>
+                <span>Agreement Level:</span>
+                <span className="text-emerald-400 font-semibold">{context.disagreementLevel.toUpperCase()}</span>
               </div>
               <div className="flex justify-between">
                 <span>Data Status:</span>
