@@ -27,3 +27,6 @@ dist-ssr
 *.sw?
 *.tsbuildinfo
 .vercel
+
+.vercel
+.env*
