@@ -153,6 +153,7 @@ export const App: React.FC = () => {
                 leadTimeHours={leadTimeHours}
                 setLeadTimeHours={setLeadTimeHours}
                 isDemonstrationData={pipelineData.isDemonstrationData}
+                isLoading={isLoading}
               />
             )}
 

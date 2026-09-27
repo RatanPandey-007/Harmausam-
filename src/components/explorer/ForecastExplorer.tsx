@@ -22,6 +22,7 @@ interface ForecastExplorerProps {
   leadTimeHours: number;
   setLeadTimeHours: (lead: number) => void;
   isDemonstrationData: boolean;
+  isLoading?: boolean;
 }
 
 export const ForecastExplorer: React.FC<ForecastExplorerProps> = ({
@@ -34,6 +35,7 @@ export const ForecastExplorer: React.FC<ForecastExplorerProps> = ({
   leadTimeHours,
   setLeadTimeHours,
   isDemonstrationData,
+  isLoading = false,
 }) => {
   const [displayMode, setDisplayMode] = useState<ExplorerDisplayMode>('BLENDED');
   const [selectedSource, setSelectedSource] = useState<ForecastSourceId>('ECMWF');
@@ -66,6 +68,7 @@ export const ForecastExplorer: React.FC<ForecastExplorerProps> = ({
         currentResult={currentResult}
         timeSeriesTrajectory={timeSeriesTrajectory}
         isDemonstrationData={isDemonstrationData}
+        isPipelineLoading={isLoading}
       />
 
       {/* 3. Operational Timeline Scrubber */}

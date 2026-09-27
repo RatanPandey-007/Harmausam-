@@ -14,6 +14,7 @@ import { MapTelemetryOverlay } from './map/MapTelemetryOverlay';
 import { MapLegendOverlay } from './map/MapLegendOverlay';
 import { MapControlsOverlay } from './map/MapControlsOverlay';
 import { MapHoverTooltip, HoverTooltipData } from './map/MapHoverTooltip';
+import { MapStatusOverlay, ForecastOverlayStatus } from './map/MapStatusOverlay';
 import { 
   resolveMapStyle, 
   getFallbackMapStyle,
@@ -32,6 +33,7 @@ interface ForecastMapProps {
   currentResult: BlendedForecastResult;
   timeSeriesTrajectory: BlendedForecastResult[];
   isDemonstrationData: boolean;
+  isPipelineLoading?: boolean;
 }
 
 export const ForecastMap: React.FC<ForecastMapProps> = ({
@@ -43,6 +45,7 @@ export const ForecastMap: React.FC<ForecastMapProps> = ({
   leadTimeHours,
   currentResult,
   isDemonstrationData,
+  isPipelineLoading = false,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const weatherCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -53,15 +56,10 @@ export const ForecastMap: React.FC<ForecastMapProps> = ({
   const [activeStyle, setActiveStyle] = useState<MapStyleType>('standard');
   const [hoverData, setHoverData] = useState<HoverTooltipData | null>(null);
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
-  const [isMapLoading, setIsMapLoading] = useState<boolean>(true);
-  const [mapError, setMapError] = useState<boolean>(false);
+  const [overlayStatus, setOverlayStatus] = useState<ForecastOverlayStatus>('LOADING');
+  const [overlaySubMessage, setOverlaySubMessage] = useState<string | null>(null);
+  const [baseMapError, setBaseMapError] = useState<boolean>(false);
   const [providerConfig] = useState(() => getMapProviderConfig());
-
-  const isOverlayAvailable = Boolean(
-    currentResult && 
-    currentResult.individualForecasts && 
-    !isNaN(currentResult.adaptiveBlendedForecast)
-  );
 
   // Synchronize weather canvas resolution with MapLibre viewport
   const resizeCanvas = useCallback(() => {
@@ -73,17 +71,50 @@ export const ForecastMap: React.FC<ForecastMapProps> = ({
     }
   }, []);
 
-  // Redraw meteorological field or wind particle stream
-  const redrawWeatherField = useCallback(() => {
+  // Compute station forecast value for the markers
+  const getStationValue = useCallback((st: StationLocation): { val: number; unit: string } => {
+    const unit = selectedVariable === 'temperature_2m' 
+      ? '°C' 
+      : selectedVariable === 'precipitation' 
+      ? 'mm' 
+      : selectedVariable === 'wind_speed_10m' 
+      ? 'm/s' 
+      : selectedVariable === 'relative_humidity_2m' 
+      ? '%' 
+      : 'hPa';
+
+    if (st.id === station.id) {
+      const val = displayMode === 'SINGLE'
+        ? (currentResult?.individualForecasts?.[selectedSource] ?? currentResult?.adaptiveBlendedForecast ?? 0)
+        : displayMode === 'DISAGREEMENT'
+        ? (currentResult?.modelSpread ?? 0)
+        : (currentResult?.adaptiveBlendedForecast ?? 0);
+      return { val, unit };
+    }
+
+    if (selectedVariable === 'temperature_2m') {
+      const base = st.climatology.tempMean;
+      const diurnal = Math.sin((leadTimeHours / 24) * Math.PI * 2) * 3.5;
+      return { val: base + diurnal, unit };
+    } else if (selectedVariable === 'precipitation') {
+      const val = st.id === 'VIDP' ? 4.2 : st.id === 'RJTT' ? 14.5 : 0.8;
+      return { val, unit };
+    } else if (selectedVariable === 'wind_speed_10m') {
+      return { val: st.climatology.windMeanMs * 1.2, unit };
+    } else if (selectedVariable === 'relative_humidity_2m') {
+      const val = st.id === 'VIDP' ? 68 : st.id === 'EGLL' ? 78 : 55;
+      return { val, unit };
+    } else {
+      const val = st.id === 'VIDP' ? 1010 : st.id === 'EGLL' ? 1018 : 1014;
+      return { val, unit };
+    }
+  }, [station.id, selectedVariable, displayMode, selectedSource, currentResult, leadTimeHours]);
+
+  // Execute drawing of meteorological canvas layer
+  const renderCanvasLayer = useCallback(() => {
     const map = mapInstanceRef.current;
     const canvas = weatherCanvasRef.current;
     if (!map || !canvas) return;
-
-    if (!isOverlayAvailable) {
-      const ctx = canvas.getContext('2d');
-      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-      return;
-    }
 
     if (selectedVariable === 'wind_speed_10m') {
       if (!windEngineRef.current) {
@@ -108,54 +139,135 @@ export const ForecastMap: React.FC<ForecastMapProps> = ({
         isDemonstrationData
       );
     }
-  }, [station, selectedVariable, displayMode, selectedSource, leadTimeHours, currentResult, isDemonstrationData, isOverlayAvailable]);
+  }, [station, selectedVariable, displayMode, selectedSource, leadTimeHours, currentResult, isDemonstrationData]);
 
-  // Compute station forecast value for the markers
-  const getStationValue = useCallback((st: StationLocation): { val: number; unit: string } => {
-    const unit = selectedVariable === 'temperature_2m' 
-      ? '°C' 
-      : selectedVariable === 'precipitation' 
-      ? 'mm' 
-      : selectedVariable === 'wind_speed_10m' 
-      ? 'm/s' 
-      : selectedVariable === 'relative_humidity_2m' 
-      ? '%' 
-      : 'hPa';
+  // STEP 4: Independent Forecast Overlay Loading & Validation Lifecycle (try/catch/finally + timeout)
+  useEffect(() => {
+    let isCancelled = false;
+    let timeoutId: any = null;
 
-    if (st.id === station.id) {
-      const val = displayMode === 'SINGLE'
-        ? (currentResult.individualForecasts[selectedSource] ?? currentResult.adaptiveBlendedForecast)
-        : displayMode === 'DISAGREEMENT'
-        ? currentResult.modelSpread
-        : currentResult.adaptiveBlendedForecast;
-      return { val, unit };
+    if (isPipelineLoading) {
+      setOverlayStatus('LOADING');
+      setOverlaySubMessage(null);
+      return;
     }
 
-    if (selectedVariable === 'temperature_2m') {
-      const base = st.climatology.tempMean;
-      const diurnal = Math.sin((leadTimeHours / 24) * Math.PI * 2) * 3.5;
-      return { val: base + diurnal, unit };
-    } else if (selectedVariable === 'precipitation') {
-      const val = st.id === 'VIDP' ? 4.2 : st.id === 'RJTT' ? 14.5 : 0.8;
-      return { val, unit };
-    } else if (selectedVariable === 'wind_speed_10m') {
-      return { val: st.climatology.windMeanMs * 1.2, unit };
-    } else if (selectedVariable === 'relative_humidity_2m') {
-      const val = st.id === 'VIDP' ? 68 : st.id === 'EGLL' ? 78 : 55;
-      return { val, unit };
-    } else {
-      const val = st.id === 'VIDP' ? 1010 : st.id === 'EGLL' ? 1018 : 1014;
-      return { val, unit };
-    }
-  }, [station.id, selectedVariable, displayMode, selectedSource, currentResult, leadTimeHours]);
+    setOverlayStatus('LOADING');
+    setOverlaySubMessage(null);
 
-  // Initialize MapLibre GL Map with MapTiler / Fallback Basemap
+    // STEP 3: Request timeout (12s) - forecast overlay must never hang forever
+    timeoutId = setTimeout(() => {
+      if (!isCancelled) {
+        setOverlayStatus('UNAVAILABLE');
+        setOverlaySubMessage('Forecast data could not be loaded for this location/time.');
+        const canvas = weatherCanvasRef.current;
+        if (canvas) {
+          const ctx = canvas.getContext('2d');
+          if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        if (windEngineRef.current) windEngineRef.current.stop();
+      }
+    }, 12000);
+
+    const executeOverlayUpdate = async () => {
+      try {
+        // STEP 5: Real Forecast Data Validation
+        if (!currentResult) {
+          if (!isCancelled) {
+            setOverlayStatus('INSUFFICIENT_DATA');
+            setOverlaySubMessage('No forecast data available for this station.');
+          }
+          return;
+        }
+
+        if (!currentResult.individualForecasts || Object.keys(currentResult.individualForecasts).length === 0) {
+          if (!isCancelled) {
+            setOverlayStatus('INSUFFICIENT_DATA');
+            setOverlaySubMessage('NWP model outputs missing in forecast record.');
+          }
+          return;
+        }
+
+        if (displayMode === 'SINGLE') {
+          const val = currentResult.individualForecasts[selectedSource];
+          if (val === undefined || isNaN(val)) {
+            if (!isCancelled) {
+              setOverlayStatus('INSUFFICIENT_DATA');
+              setOverlaySubMessage(`${selectedSource} model data unavailable for this parameter.`);
+            }
+            return;
+          }
+        } else if (displayMode === 'DISAGREEMENT') {
+          if (currentResult.modelSpread === undefined || isNaN(currentResult.modelSpread)) {
+            if (!isCancelled) {
+              setOverlayStatus('INSUFFICIENT_DATA');
+              setOverlaySubMessage('Multi-model divergence metrics unavailable.');
+            }
+            return;
+          }
+        } else {
+          // BLENDED or COMPARISON
+          if (currentResult.adaptiveBlendedForecast === undefined || isNaN(currentResult.adaptiveBlendedForecast)) {
+            if (!isCancelled) {
+              setOverlayStatus('INSUFFICIENT_DATA');
+              setOverlaySubMessage('Adaptive consensus forecast not computed.');
+            }
+            return;
+          }
+        }
+
+        // Render Canvas Layer
+        resizeCanvas();
+        renderCanvasLayer();
+
+        if (!isCancelled) {
+          setOverlayStatus('SUCCESS');
+          setOverlaySubMessage(null);
+        }
+      } catch (err: any) {
+        console.error('Forecast map overlay error:', err);
+        if (!isCancelled) {
+          setOverlayStatus('UNAVAILABLE');
+          setOverlaySubMessage('Forecast data could not be loaded for this location/time.');
+          const canvas = weatherCanvasRef.current;
+          if (canvas) {
+            const ctx = canvas.getContext('2d');
+            if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+          }
+          if (windEngineRef.current) windEngineRef.current.stop();
+        }
+      } finally {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+      }
+    };
+
+    executeOverlayUpdate();
+
+    return () => {
+      isCancelled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [
+    station,
+    selectedVariable,
+    displayMode,
+    selectedSource,
+    leadTimeHours,
+    currentResult,
+    isDemonstrationData,
+    isPipelineLoading,
+    resizeCanvas,
+    renderCanvasLayer
+  ]);
+
+  // STEP 4 & 6: Initialize MapLibre GL Basemap (MapTiler + Fallback, independent of overlay)
   useEffect(() => {
     if (!mapContainerRef.current) return;
     if (mapInstanceRef.current) return;
 
-    setIsMapLoading(true);
-    setMapError(false);
+    setBaseMapError(false);
 
     const initialStyle = resolveMapStyle('standard');
 
@@ -183,8 +295,7 @@ export const ForecastMap: React.FC<ForecastMapProps> = ({
           attributionControl: false,
         });
       } catch {
-        setMapError(true);
-        setIsMapLoading(false);
+        setBaseMapError(true);
         return;
       }
     }
@@ -198,11 +309,13 @@ export const ForecastMap: React.FC<ForecastMapProps> = ({
       'bottom-right'
     );
 
-    map.on('load', () => {
-      setIsMapLoading(false);
-      setMapError(false);
+    let basemapReady = false;
+    const onBasemapReady = () => {
+      if (basemapReady) return;
+      basemapReady = true;
+      setBaseMapError(false);
       resizeCanvas();
-      redrawWeatherField();
+      renderCanvasLayer();
 
       // Smooth camera glide to regional focus on load
       setTimeout(() => {
@@ -215,24 +328,38 @@ export const ForecastMap: React.FC<ForecastMapProps> = ({
           essential: true,
         });
       }, 350);
-    });
+    };
 
-    // Gracefully catch and handle style loading errors without crashing
+    map.once('load', onBasemapReady);
+    map.once('style.load', onBasemapReady);
+    map.once('idle', onBasemapReady);
+
+    // Gracefully catch and handle style loading errors without blocking the user
+    let hasAttemptedFallback = false;
     map.on('error', (e) => {
-      // If a style fails to load (e.g. key domain restriction or network outage), switch to fallback
-      if (e?.error && !map.isStyleLoaded()) {
-        console.warn('[ForecastMap] MapLibre style issue encountered, applying operational fallback style.');
+      if (!basemapReady && !hasAttemptedFallback) {
+        hasAttemptedFallback = true;
+        console.warn('[ForecastMap] Style loading issue encountered, applying operational fallback style.');
         try {
           map.setStyle(getFallbackMapStyle(activeStyle));
+          map.once('style.load', onBasemapReady);
+          map.once('idle', onBasemapReady);
         } catch {
-          setMapError(true);
+          setBaseMapError(true);
         }
       }
     });
 
+    // Basemap safety timer: ensures ready state within 4 seconds even if network hangs
+    const safetyTimer = setTimeout(() => {
+      if (!basemapReady) {
+        onBasemapReady();
+      }
+    }, 4000);
+
     const handleCameraChange = () => {
       resizeCanvas();
-      redrawWeatherField();
+      renderCanvasLayer();
     };
 
     map.on('move', handleCameraChange);
@@ -242,6 +369,7 @@ export const ForecastMap: React.FC<ForecastMapProps> = ({
     mapInstanceRef.current = map;
 
     return () => {
+      clearTimeout(safetyTimer);
       if (windEngineRef.current) {
         windEngineRef.current.stop();
         windEngineRef.current = null;
@@ -265,12 +393,16 @@ export const ForecastMap: React.FC<ForecastMapProps> = ({
 
       map.once('style.load', () => {
         resizeCanvas();
-        redrawWeatherField();
+        renderCanvasLayer();
       });
     } catch {
       map.setStyle(getFallbackMapStyle(newStyle));
+      map.once('style.load', () => {
+        resizeCanvas();
+        renderCanvasLayer();
+      });
     }
-  }, [redrawWeatherField, resizeCanvas]);
+  }, [renderCanvasLayer, resizeCanvas]);
 
   // Smooth camera glide when active station changes
   useEffect(() => {
@@ -291,17 +423,12 @@ export const ForecastMap: React.FC<ForecastMapProps> = ({
     setIsTransitioning(true);
     const timer = setTimeout(() => {
       setIsTransitioning(false);
-      redrawWeatherField();
+      renderCanvasLayer();
     }, 120);
     return () => clearTimeout(timer);
-  }, [leadTimeHours, redrawWeatherField]);
+  }, [leadTimeHours, renderCanvasLayer]);
 
-  // Redraw weather field on variable or result updates
-  useEffect(() => {
-    redrawWeatherField();
-  }, [station.id, selectedVariable, displayMode, selectedSource, currentResult, redrawWeatherField]);
-
-  // Manage Markers on Map (Apple Maps cleanliness + dark operational simplicity)
+  // Manage Station Markers on Map (interactive and fully functional at all times)
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
@@ -382,7 +509,7 @@ export const ForecastMap: React.FC<ForecastMapProps> = ({
       ];
 
       sourceOffsets.forEach((src) => {
-        const srcVal = currentResult.individualForecasts[src.id] ?? currentResult.adaptiveBlendedForecast;
+        const srcVal = currentResult?.individualForecasts?.[src.id] ?? currentResult?.adaptiveBlendedForecast ?? 0;
         const srcUnit = selectedVariable === 'temperature_2m' 
           ? '°C' 
           : selectedVariable === 'precipitation' 
@@ -490,6 +617,10 @@ export const ForecastMap: React.FC<ForecastMapProps> = ({
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const map = mapInstanceRef.current;
     if (!map || !mapContainerRef.current) return;
+    if (!currentResult || overlayStatus !== 'SUCCESS') {
+      setHoverData(null);
+      return;
+    }
 
     const rect = mapContainerRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -539,7 +670,7 @@ export const ForecastMap: React.FC<ForecastMapProps> = ({
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
-      {/* 1. Underlying High-Quality Vector Basemap (MapTiler MapLibre GL) */}
+      {/* 1. Underlying High-Quality Vector Basemap (MapTiler MapLibre GL / Operational Fallback) */}
       <div 
         ref={mapContainerRef} 
         className="w-full h-full z-0 cursor-crosshair"
@@ -553,22 +684,18 @@ export const ForecastMap: React.FC<ForecastMapProps> = ({
         }`}
       />
 
-      {/* 3. Loading State Overlay (Requirement 10) */}
-      {isMapLoading && !mapError && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#08090C]/65 backdrop-blur-[2px] pointer-events-none transition-opacity duration-300">
-          <div className="flex items-center space-x-2.5 bg-[#0E1015]/95 border border-slate-800 text-slate-300 px-4 py-2.5 rounded-lg shadow-xl font-mono text-xs">
-            <div className="w-3.5 h-3.5 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin" />
-            <span>Loading forecast map...</span>
-          </div>
-        </div>
-      )}
+      {/* 3. STEP 8: Small Non-Blocking Operational Status Indicator */}
+      <MapStatusOverlay
+        status={overlayStatus}
+        subMessage={overlaySubMessage}
+      />
 
-      {/* 4. Error State Overlay (Requirement 10) */}
-      {mapError && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#08090C]/85 p-4 pointer-events-none">
-          <div className="flex items-center space-x-2.5 bg-[#0E1015] border border-amber-500/30 text-amber-200 px-4 py-2.5 rounded-lg shadow-xl font-mono text-xs">
+      {/* 4. Rare Basemap Error Warning (Non-blocking, kept minimal) */}
+      {baseMapError && (
+        <div className="absolute bottom-14 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+          <div className="flex items-center space-x-2 bg-[#0E1015]/95 border border-amber-500/30 text-amber-200 px-3.5 py-1.5 rounded-lg shadow-xl font-mono text-xs pointer-events-auto">
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping mr-1" />
-            <span>Map temporarily unavailable</span>
+            <span>Basemap temporarily unavailable — operating on coordinate grid</span>
           </div>
         </div>
       )}
@@ -583,7 +710,7 @@ export const ForecastMap: React.FC<ForecastMapProps> = ({
         currentResult={currentResult}
         isDemonstrationData={isDemonstrationData}
         hasMapTilerKey={providerConfig.hasApiKey}
-        isOverlayAvailable={isOverlayAvailable}
+        isOverlayAvailable={overlayStatus === 'SUCCESS'}
       />
 
       {/* 6. Minimalist Weather Legend (Bottom-Left) */}
